@@ -1,0 +1,338 @@
+[
+  {
+    "id": "chair",
+    "file": "/assets/furniture/chair.glb",
+    "tags": ["chair", "seat", "wooden", "dining chair"],
+    "category": "seating",
+    "approximate_size": { "width": 0.5, "depth": 0.5, "height": 0.9 }
+  },
+  {
+    "id": "chair-cushion",
+    "file": "/assets/furniture/chairCushion.glb",
+    "tags": ["armchair", "cushion chair", "accent chair", "padded seat"],
+    "category": "seating",
+    "approximate_size": { "width": 0.8, "depth": 0.8, "height": 1.0 }
+  },
+  {
+    "id": "chair-desk",
+    "file": "/assets/furniture/chairDesk.glb",
+    "tags": ["office chair", "desk chair", "swivel", "computer chair"],
+    "category": "seating",
+    "approximate_size": { "width": 0.65, "depth": 0.65, "height": 1.2 }
+  },
+  {
+    "id": "chair-modern-cushion",
+    "file": "/assets/furniture/chairModernCushion.glb",
+    "tags": ["modern chair", "designer chair", "contemporary", "lounge chair"],
+    "category": "seating",
+    "approximate_size": { "width": 0.85, "depth": 0.85, "height": 0.95 }
+  },
+  {
+    "id": "chair-rounded",
+    "file": "/assets/furniture/chairRounded.glb",
+    "tags": ["rounded chair", "egg chair", "modern seating", "accent"],
+    "category": "seating",
+    "approximate_size": { "width": 0.9, "depth": 0.9, "height": 1.1 }
+  },
+  {
+    "id": "lounge-chair",
+    "file": "/assets/furniture/loungeChair.glb",
+    "tags": ["lounge chair", "accent chair", "reading chair"],
+    "category": "seating",
+    "approximate_size": { "width": 0.9, "depth": 0.95, "height": 0.9 }
+  },
+  {
+    "id": "lounge-chair-relax",
+    "file": "/assets/furniture/loungeChairRelax.glb",
+    "tags": ["recliner", "relaxation chair", "lounge", "recline"],
+    "category": "seating",
+    "approximate_size": { "width": 1.0, "depth": 1.2, "height": 1.0 }
+  },
+  {
+    "id": "sofa",
+    "file": "/assets/furniture/loungeSofa.glb",
+    "tags": ["sofa", "couch", "seating", "living room", "2 seater"],
+    "category": "seating",
+    "approximate_size": { "width": 1.8, "depth": 0.9, "height": 0.85 }
+  },
+  {
+    "id": "sofa-long",
+    "file": "/assets/furniture/loungeSofaLong.glb",
+    "tags": ["sofa", "couch", "long sofa", "3 seater", "sectional"],
+    "category": "seating",
+    "approximate_size": { "width": 2.5, "depth": 0.9, "height": 0.85 }
+  },
+  {
+    "id": "sofa-corner",
+    "file": "/assets/furniture/loungeSofaCorner.glb",
+    "tags": ["corner sofa", "sectional", "L-shaped"],
+    "category": "seating",
+    "approximate_size": { "width": 2.2, "depth": 2.2, "height": 0.85 }
+  },
+  {
+    "id": "sofa-ottoman",
+    "file": "/assets/furniture/loungeSofaOttoman.glb",
+    "tags": ["ottoman", "footrest", "pouf", "coffee table"],
+    "category": "seating",
+    "approximate_size": { "width": 0.7, "depth": 0.7, "height": 0.45 }
+  },
+  {
+    "id": "design-chair",
+    "file": "/assets/furniture/loungeDesignChair.glb",
+    "tags": ["modern chair", "design chair", "contemporary"],
+    "category": "seating",
+    "approximate_size": { "width": 0.8, "depth": 0.8, "height": 1.0 }
+  },
+  {
+    "id": "design-sofa",
+    "file": "/assets/furniture/loungeDesignSofa.glb",
+    "tags": ["design sofa", "modern couch", "contemporary"],
+    "category": "seating",
+    "approximate_size": { "width": 2.0, "depth": 0.9, "height": 0.8 }
+  },
+  {
+    "id": "design-sofa-corner",
+    "file": "/assets/furniture/loungeDesignSofaCorner.glb",
+    "tags": ["corner sofa", "sectional", "design"],
+    "category": "seating",
+    "approximate_size": { "width": 2.3, "depth": 2.3, "height": 0.8 }
+  },
+  {
+    "id": "bench-cushion",
+    "file": "/assets/furniture/benchCushion.glb",
+    "tags": ["bench", "cushion", "padded bench", "seating"],
+    "category": "seating",
+    "approximate_size": { "width": 1.2, "depth": 0.5, "height": 0.6 }
+  },
+  {
+    "id": "bench",
+    "file": "/assets/furniture/bench.glb",
+    "tags": ["bench", "seat", "wooden bench"],
+    "category": "seating",
+    "approximate_size": { "width": 1.2, "depth": 0.4, "height": 0.5 }
+  },
+  {
+    "id": "stool-bar",
+    "file": "/assets/furniture/stoolBar.glb",
+    "tags": ["barstool", "counter stool", "bar seating"],
+    "category": "seating",
+    "approximate_size": { "width": 0.4, "depth": 0.4, "height": 1.0 }
+  },
+  {
+    "id": "table-coffee",
+    "file": "/assets/furniture/tableCoffee.glb",
+    "tags": ["coffee table", "center table", "low table"],
+    "category": "tables",
+    "approximate_size": { "width": 1.1, "depth": 0.6, "height": 0.45 }
+  },
+  {
+    "id": "table-coffee-glass",
+    "file": "/assets/furniture/tableCoffeeGlass.glb",
+    "tags": ["glass table", "coffee table", "center table"],
+    "category": "tables",
+    "approximate_size": { "width": 1.1, "depth": 0.6, "height": 0.45 }
+  },
+  {
+    "id": "table-coffee-square",
+    "file": "/assets/furniture/tableCoffeeSquare.glb",
+    "tags": ["coffee table", "square table", "center table"],
+    "category": "tables",
+    "approximate_size": { "width": 1.0, "depth": 1.0, "height": 0.45 }
+  },
+  {
+    "id": "table",
+    "file": "/assets/furniture/table.glb",
+    "tags": ["dining table", "table", "furniture"],
+    "category": "tables",
+    "approximate_size": { "width": 1.4, "depth": 0.8, "height": 0.75 }
+  },
+  {
+    "id": "table-round",
+    "file": "/assets/furniture/tableRound.glb",
+    "tags": ["round table", "circular table", "dining table"],
+    "category": "tables",
+    "approximate_size": { "width": 1.2, "depth": 1.2, "height": 0.75 }
+  },
+  {
+    "id": "table-glass",
+    "file": "/assets/furniture/tableGlass.glb",
+    "tags": ["glass table", "modern table", "dining table"],
+    "category": "tables",
+    "approximate_size": { "width": 1.4, "depth": 0.8, "height": 0.75 }
+  },
+  {
+    "id": "side-table",
+    "file": "/assets/furniture/sideTable.glb",
+    "tags": ["side table", "end table", "accent table", "nightstand"],
+    "category": "tables",
+    "approximate_size": { "width": 0.5, "depth": 0.5, "height": 0.65 }
+  },
+  {
+    "id": "side-table-drawers",
+    "file": "/assets/furniture/sideTableDrawers.glb",
+    "tags": ["nightstand", "side table", "storage", "drawer"],
+    "category": "tables",
+    "approximate_size": { "width": 0.5, "depth": 0.5, "height": 0.75 }
+  },
+  {
+    "id": "desk",
+    "file": "/assets/furniture/desk.glb",
+    "tags": ["desk", "work table", "office furniture", "computer desk"],
+    "category": "tables",
+    "approximate_size": { "width": 1.2, "depth": 0.6, "height": 0.75 }
+  },
+  {
+    "id": "desk-corner",
+    "file": "/assets/furniture/deskCorner.glb",
+    "tags": ["corner desk", "L-shaped desk", "office"],
+    "category": "tables",
+    "approximate_size": { "width": 1.5, "depth": 1.5, "height": 0.75 }
+  },
+  {
+    "id": "lamp-table",
+    "file": "/assets/furniture/lampSquareTable.glb",
+    "tags": ["table lamp", "desk lamp", "accent light"],
+    "category": "lighting",
+    "approximate_size": { "width": 0.25, "depth": 0.25, "height": 0.5 }
+  },
+  {
+    "id": "lamp-floor",
+    "file": "/assets/furniture/lampSquareFloor.glb",
+    "tags": ["floor lamp", "standing lamp", "tall lamp"],
+    "category": "lighting",
+    "approximate_size": { "width": 0.3, "depth": 0.3, "height": 1.6 }
+  },
+  {
+    "id": "lamp-wall",
+    "file": "/assets/furniture/lampWall.glb",
+    "tags": ["wall lamp", "sconce", "mounted light"],
+    "category": "lighting",
+    "approximate_size": { "width": 0.4, "depth": 0.2, "height": 0.3 }
+  },
+  {
+    "id": "bed-single",
+    "file": "/assets/furniture/bedSingle.glb",
+    "tags": ["single bed", "twin bed", "bedroom"],
+    "category": "beds",
+    "approximate_size": { "width": 1.0, "depth": 2.0, "height": 0.5 }
+  },
+  {
+    "id": "bed-double",
+    "file": "/assets/furniture/bedDouble.glb",
+    "tags": ["double bed", "queen bed", "master bed"],
+    "category": "beds",
+    "approximate_size": { "width": 1.5, "depth": 2.0, "height": 0.5 }
+  },
+  {
+    "id": "bed-bunk",
+    "file": "/assets/furniture/bedBunk.glb",
+    "tags": ["bunk bed", "loft bed", "children bed"],
+    "category": "beds",
+    "approximate_size": { "width": 1.0, "depth": 2.0, "height": 1.8 }
+  },
+  {
+    "id": "bookcase-open",
+    "file": "/assets/furniture/bookcaseOpen.glb",
+    "tags": ["bookcase", "shelving", "storage", "open shelves"],
+    "category": "storage",
+    "approximate_size": { "width": 0.8, "depth": 0.3, "height": 1.6 }
+  },
+  {
+    "id": "bookcase-closed",
+    "file": "/assets/furniture/bookcaseClosed.glb",
+    "tags": ["bookcase", "cabinet", "storage", "closed"],
+    "category": "storage",
+    "approximate_size": { "width": 0.8, "depth": 0.4, "height": 1.6 }
+  },
+  {
+    "id": "cabinet-television",
+    "file": "/assets/furniture/cabinetTelevision.glb",
+    "tags": ["tv stand", "media console", "entertainment center"],
+    "category": "storage",
+    "approximate_size": { "width": 1.2, "depth": 0.5, "height": 0.6 }
+  },
+  {
+    "id": "kitchen-cabinet",
+    "file": "/assets/furniture/kitchenCabinet.glb",
+    "tags": ["kitchen cabinet", "cabinet", "storage"],
+    "category": "kitchen",
+    "approximate_size": { "width": 0.6, "depth": 0.6, "height": 0.9 }
+  },
+  {
+    "id": "refrigerator",
+    "file": "/assets/furniture/kitchenFridge.glb",
+    "tags": ["fridge", "refrigerator", "appliance"],
+    "category": "kitchen",
+    "approximate_size": { "width": 0.7, "depth": 0.7, "height": 1.8 }
+  },
+  {
+    "id": "stove",
+    "file": "/assets/furniture/kitchenStove.glb",
+    "tags": ["stove", "range", "cooking appliance"],
+    "category": "kitchen",
+    "approximate_size": { "width": 0.7, "depth": 0.6, "height": 0.9 }
+  },
+  {
+    "id": "sink",
+    "file": "/assets/furniture/kitchenSink.glb",
+    "tags": ["kitchen sink", "sink", "basin"],
+    "category": "kitchen",
+    "approximate_size": { "width": 0.8, "depth": 0.6, "height": 0.3 }
+  },
+  {
+    "id": "plant-potted",
+    "file": "/assets/furniture/pottedPlant.glb",
+    "tags": ["plant", "potted plant", "decoration", "greenery"],
+    "category": "decor",
+    "approximate_size": { "width": 0.3, "depth": 0.3, "height": 0.8 }
+  },
+  {
+    "id": "rug-round",
+    "file": "/assets/furniture/rugRound.glb",
+    "tags": ["rug", "carpet", "round rug", "flooring"],
+    "category": "decor",
+    "approximate_size": { "width": 1.5, "depth": 1.5, "height": 0.05 }
+  },
+  {
+    "id": "rug-rectangular",
+    "file": "/assets/furniture/rugRectangle.glb",
+    "tags": ["rug", "carpet", "rectangular rug"],
+    "category": "decor",
+    "approximate_size": { "width": 1.8, "depth": 1.2, "height": 0.05 }
+  },
+  {
+    "id": "television-modern",
+    "file": "/assets/furniture/televisionModern.glb",
+    "tags": ["tv", "television", "display", "screen"],
+    "category": "electronics",
+    "approximate_size": { "width": 1.1, "depth": 0.1, "height": 0.7 }
+  },
+  {
+    "id": "bathroom-sink",
+    "file": "/assets/furniture/bathroomSink.glb",
+    "tags": ["bathroom sink", "washbasin", "hand basin", "vanity sink"],
+    "category": "bathroom",
+    "approximate_size": { "width": 0.5, "depth": 0.4, "height": 0.85 }
+  },
+  {
+    "id": "bathtub",
+    "file": "/assets/furniture/bathtub.glb",
+    "tags": ["bathtub", "bath", "tub", "bathroom"],
+    "category": "bathroom",
+    "approximate_size": { "width": 0.75, "depth": 1.6, "height": 0.55 }
+  },
+  {
+    "id": "toilet",
+    "file": "/assets/furniture/toilet.glb",
+    "tags": ["toilet", "wc", "bathroom"],
+    "category": "bathroom",
+    "approximate_size": { "width": 0.4, "depth": 0.7, "height": 0.75 }
+  },
+  {
+    "id": "shower",
+    "file": "/assets/furniture/shower.glb",
+    "tags": ["shower", "shower stall", "bathroom"],
+    "category": "bathroom",
+    "approximate_size": { "width": 0.9, "depth": 0.9, "height": 2.0 }
+  }
+]

@@ -1,0 +1,102 @@
+/* Precision scrollbar — 3px, for asset list */
+.precision-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-mid) transparent;
+}
+.precision-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.precision-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.precision-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-mid);
+  border-radius: 2px;
+}
+.precision-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-ghost);
+}
+
+/* Cursor rules */
+.cursor-viewport {
+  cursor: crosshair;
+}
+
+/* ── Landing page sidebar entrance animations ─────────────────────── */
+@keyframes ui-from-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes ui-from-right {
+  from { transform: translateX(100%);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes ui-from-top {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes ui-from-bottom {
+  from { transform: translateY(100%);  opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes ui-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Keyframes */
+@keyframes ui-from-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes ui-from-right {
+  from { transform: translateX(100%);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes ui-from-top {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes ui-from-bottom {
+  from { transform: translateY(100%);  opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes ui-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loader-sheen {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+
+textarea.precision-textarea::placeholder {
+  color: var(--text-ghost);
+  font-style: italic;
+}
+
+/* Placeholder italic */
+input.precision-input::placeholder {
+  color: var(--text-ghost);
+  font-style: italic;
+}
+
+input.precision-input:focus {
+  border-color: var(--accent-border) !important;
+  outline: none;
+}

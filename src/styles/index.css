@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./global.css";
+
+:root {
+  color-scheme: dark;
+  /* Legacy tokens kept for existing components */
+  --color-background: #090a0c;
+  --color-surface: #0e1014;
+  --color-overlay: #13151a;
+  --color-inset: #1c1f26;
+  --color-border: rgba(255, 255, 255, 0.09);
+  --color-text-primary: #eceef2;
+  --color-text-muted: #9ba3af;
+  --color-text-subtle: #555c68;
+  --color-accent: #3b8eff;
+  --color-accent-hover: #6aadff;
+  --color-accent-soft: rgba(59, 142, 255, 0.10);
+  --color-warning: #e8a83a;
+  --color-danger: #e85555;
+  --color-focus: rgba(59, 142, 255, 0.28);
+  --color-accent-clay: var(--color-accent);
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.36);
+  --panel-blur: blur(16px);
+  background: var(--surface-void);
+  font-family: var(--font-ui);
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--surface-void);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button,
+input,
+textarea,
+a {
+  transition:
+    border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+textarea::selection,
+input::selection {
+  background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-surface);
+}
+.thin-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.thin-scrollbar::-webkit-scrollbar-track { background: var(--color-surface); }
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+
+.panel-resize[data-resize-handle-state="hover"],
+.panel-resize[data-resize-handle-state="drag"] {
+  background: color-mix(in srgb, var(--color-accent) 46%, transparent);
+}
