@@ -1,15 +1,21 @@
 "use client";
 
-import { Map, X } from "lucide-react";
+import { Download, Map, X } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 
 type BlueprintDialogProps = {
   open: boolean;
   blueprint: ReactNode;
   onClose: () => void;
+  onDownloadBlueprint?: () => void;
 };
 
-export function BlueprintDialog({ open, blueprint, onClose }: BlueprintDialogProps) {
+export function BlueprintDialog({
+  open,
+  blueprint,
+  onClose,
+  onDownloadBlueprint,
+}: BlueprintDialogProps) {
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
@@ -72,9 +78,18 @@ export function BlueprintDialog({ open, blueprint, onClose }: BlueprintDialogPro
           >
             Blueprint
           </span>
+          <HeaderBtn
+            icon={<Download size={13} strokeWidth={1.5} />}
+            label="Download AutoCAD DXF"
+            onClick={onDownloadBlueprint}
+          />
           <CloseBtn onClick={onClose} />
         </div>
-        <div style={{ flex: 1, minHeight: 0, background: "var(--surface-input)" }}>{blueprint}</div>
+        <div
+          style={{ flex: 1, minHeight: 0, background: "var(--surface-input)" }}
+        >
+          {blueprint}
+        </div>
       </div>
     </div>
   );
@@ -105,6 +120,43 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
       }}
     >
       <X size={14} strokeWidth={1.5} />
+    </button>
+  );
+}
+
+function HeaderBtn({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick?: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+        border: "none",
+        background: hovered ? "var(--surface-overlay)" : "transparent",
+        color: hovered ? "var(--text-primary)" : "var(--text-secondary)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        transition: "background 100ms, color 100ms",
+      }}
+    >
+      {icon}
     </button>
   );
 }

@@ -1,7 +1,31 @@
-import { SplatEdit, SplatEditRgbaBlendMode, SplatEditSdf, SplatEditSdfType, SplatMesh } from "@sparkjsdev/spark";
-import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { Grid, Html, OrbitControls, PerspectiveCamera, TransformControls, useGLTF } from "@react-three/drei";
-import { XR, XROrigin, createXRStore, useXR, useXRControllerLocomotion } from "@react-three/xr";
+import {
+  SplatEdit,
+  SplatEditRgbaBlendMode,
+  SplatEditSdf,
+  SplatEditSdfType,
+  SplatMesh,
+} from "@sparkjsdev/spark";
+import {
+  Canvas,
+  type ThreeEvent,
+  useFrame,
+  useThree,
+} from "@react-three/fiber";
+import {
+  Grid,
+  Html,
+  OrbitControls,
+  PerspectiveCamera,
+  TransformControls,
+  useGLTF,
+} from "@react-three/drei";
+import {
+  XR,
+  XROrigin,
+  createXRStore,
+  useXR,
+  useXRControllerLocomotion,
+} from "@react-three/xr";
 import { Camera, Minus, SlidersHorizontal } from "lucide-react";
 import {
   Component,
@@ -97,7 +121,10 @@ type SceneViewProps = {
 type Projector = (clientX: number, clientY: number) => Vec3 | null;
 type ViewMode = "blockout" | "generated";
 type ObjectSplatMode = "off" | "highlight" | "fade" | "hide" | "isolate";
-type SplatLoadState = { status: "idle" | "loading" | "ready" | "error"; message?: string };
+type SplatLoadState = {
+  status: "idle" | "loading" | "ready" | "error";
+  message?: string;
+};
 type SplatAlignment = {
   position: Vec3;
   rotationY: number;
@@ -352,6 +379,9 @@ const INITIAL_CAMERA_POSITION: Vec3 = [6.5, 5.2, 7];
 const WALK_SPEED = 2.4;
 const WALK_FAST_MULTIPLIER = 1.8;
 const WALK_EYE_HEIGHT = 1.6;
+const WALK_MAX_FRAME_DELTA = 1 / 20;
+const WALK_ACCELERATION = 14;
+const WALK_DECELERATION = 18;
 
 /**
  * Single module-level WebXR store. createXRStore() lazily wires Three.js's
@@ -414,14 +444,40 @@ const FURNITURE_REGION_PROFILES: Record<
   { size: Vec3; centerOffset: Vec3; shape: SplatObjectRegion["shape"] }
 > = {
   sofa: { size: [1.72, 1.1, 0.88], centerOffset: [0, 0.55, 0.1], shape: "box" },
-  table: { size: [1.34, 0.38, 1.34], centerOffset: [0, 0.18, 0], shape: "cylinder" },
-  chair: { size: [0.82, 1.08, 0.8], centerOffset: [0, 0.54, 0.1], shape: "box" },
-  lamp: { size: [0.72, 1.52, 0.72], centerOffset: [0, 0.76, 0], shape: "cylinder" },
-  plant: { size: [0.92, 1.05, 0.92], centerOffset: [0, 0.55, 0], shape: "ellipsoid" },
-  cabinet: { size: [1.5, 1.15, 0.62], centerOffset: [0, 0.56, 0], shape: "box" },
+  table: {
+    size: [1.34, 0.38, 1.34],
+    centerOffset: [0, 0.18, 0],
+    shape: "cylinder",
+  },
+  chair: {
+    size: [0.82, 1.08, 0.8],
+    centerOffset: [0, 0.54, 0.1],
+    shape: "box",
+  },
+  lamp: {
+    size: [0.72, 1.52, 0.72],
+    centerOffset: [0, 0.76, 0],
+    shape: "cylinder",
+  },
+  plant: {
+    size: [0.92, 1.05, 0.92],
+    centerOffset: [0, 0.55, 0],
+    shape: "ellipsoid",
+  },
+  cabinet: {
+    size: [1.5, 1.15, 0.62],
+    centerOffset: [0, 0.56, 0],
+    shape: "box",
+  },
 };
 
-function SelectedCameraPreviewPanel({ camera }: { camera: SceneCamera; spzUrl: string; splatAlignment: SplatAlignment }) {
+function SelectedCameraPreviewPanel({
+  camera,
+}: {
+  camera: SceneCamera;
+  spzUrl: string;
+  splatAlignment: SplatAlignment;
+}) {
   return (
     <aside className="pointer-events-none absolute bottom-4 left-4 w-[min(18rem,calc(100vw-2rem))] rounded-md border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-overlay)_88%,transparent)] p-3 text-xs text-[var(--color-text-muted)] shadow-[var(--shadow-float)] [backdrop-filter:var(--panel-blur)]">
       <div className="mb-2 flex items-center gap-2 font-medium text-[var(--color-text-primary)]">
@@ -434,7 +490,9 @@ function SelectedCameraPreviewPanel({ camera }: { camera: SceneCamera; spzUrl: s
           {camera.position.map((value) => value.toFixed(2)).join(", ")}
         </span>
         <span>FOV</span>
-        <span className="text-[var(--color-text-primary)]">{camera.fov} deg</span>
+        <span className="text-[var(--color-text-primary)]">
+          {camera.fov} deg
+        </span>
       </div>
     </aside>
   );
@@ -448,16 +506,26 @@ function buildSplatObjectRegions(
 ): SplatObjectRegion[] {
   return [
     ...instances.map((instance) => {
-      const asset = assetById?.get(instance.assetId) ?? assets.find((item) => item.id === instance.assetId);
+      const asset =
+        assetById?.get(instance.assetId) ??
+        assets.find((item) => item.id === instance.assetId);
       return furnitureSplatRegion(instance, asset?.primitive ?? "sofa");
     }),
     ...shapes.map(shapeSplatRegion),
   ];
 }
 
-function furnitureSplatRegion(instance: FurnitureInstance, primitive: FurnitureAsset["primitive"]): SplatObjectRegion {
+function furnitureSplatRegion(
+  instance: FurnitureInstance,
+  primitive: FurnitureAsset["primitive"],
+): SplatObjectRegion {
   const profile = FURNITURE_REGION_PROFILES[primitive];
-  const center = offsetPosition(instance.position, profile.centerOffset, instance.rotation, instance.scale);
+  const center = offsetPosition(
+    instance.position,
+    profile.centerOffset,
+    instance.rotation,
+    instance.scale,
+  );
   return {
     sourceRef: { type: "furniture", id: instance.id },
     label: instance.name,
@@ -491,39 +559,83 @@ function shapeSplatRegion(shape: CustomShape): SplatObjectRegion {
     label: shape.name,
     center: shape.position,
     rotation: shape.rotation,
-    size: shape.kind === "plane" ? [shape.scale[0], Math.max(0.06, shape.scale[1] * 0.04), shape.scale[2]] : shape.scale,
-    shape: shape.kind === "sphere" ? "ellipsoid" : shape.kind === "cylinder" ? "cylinder" : "box",
+    size:
+      shape.kind === "plane"
+        ? [
+            shape.scale[0],
+            Math.max(0.06, shape.scale[1] * 0.04),
+            shape.scale[2],
+          ]
+        : shape.scale,
+    shape:
+      shape.kind === "sphere"
+        ? "ellipsoid"
+        : shape.kind === "cylinder"
+          ? "cylinder"
+          : "box",
   };
 }
 
-function offsetPosition(position: Vec3, localOffset: Vec3, rotation: Vec3, scale: Vec3): Vec3 {
-  const offset = new THREE.Vector3(localOffset[0] * scale[0], localOffset[1] * scale[1], localOffset[2] * scale[2]);
+function offsetPosition(
+  position: Vec3,
+  localOffset: Vec3,
+  rotation: Vec3,
+  scale: Vec3,
+): Vec3 {
+  const offset = new THREE.Vector3(
+    localOffset[0] * scale[0],
+    localOffset[1] * scale[1],
+    localOffset[2] * scale[2],
+  );
   offset.applyEuler(new THREE.Euler(...rotation));
-  return [position[0] + offset.x, position[1] + offset.y, position[2] + offset.z];
+  return [
+    position[0] + offset.x,
+    position[1] + offset.y,
+    position[2] + offset.z,
+  ];
 }
 
 function scaleSize(size: Vec3, scale: Vec3): Vec3 {
-  return [Math.abs(size[0] * scale[0]), Math.abs(size[1] * scale[1]), Math.abs(size[2] * scale[2])];
+  return [
+    Math.abs(size[0] * scale[0]),
+    Math.abs(size[1] * scale[1]),
+    Math.abs(size[2] * scale[2]),
+  ];
 }
 
-function selectedRefMatches(left: NonNullable<SelectedRef>, right: SelectedRef) {
+function selectedRefMatches(
+  left: NonNullable<SelectedRef>,
+  right: SelectedRef,
+) {
   return Boolean(right && left.type === right.type && left.id === right.id);
 }
 
 export function SceneView(props: SceneViewProps) {
   const projectorRef = useRef<Projector | null>(null);
-  const [dragGhost, setDragGhost] = useState<{ assetId: string; position: Vec3 | null } | null>(null);
+  const [dragGhost, setDragGhost] = useState<{
+    assetId: string;
+    position: Vec3 | null;
+  } | null>(null);
   const dragEnterCountRef = useRef(0);
-  const [objectSplatMode, setObjectSplatMode] = useState<ObjectSplatMode>("off");
-  const [splatLoadState, setSplatLoadState] = useState<SplatLoadState>({ status: "idle" });
+  const [objectSplatMode, setObjectSplatMode] =
+    useState<ObjectSplatMode>("off");
+  const [splatLoadState, setSplatLoadState] = useState<SplatLoadState>({
+    status: "idle",
+  });
   const [splatAlignmentState, setSplatAlignmentState] = useState<{
     spzUrl?: string;
     value: SplatAlignment;
-  }>(() => ({ spzUrl: props.marble.spzUrl, value: splatAlignmentFromMarble(props.marble) }));
-  const generatedAvailable = props.marble.status === "complete" && Boolean(props.marble.spzUrl);
+  }>(() => ({
+    spzUrl: props.marble.spzUrl,
+    value: splatAlignmentFromMarble(props.marble),
+  }));
+  const generatedAvailable =
+    props.marble.status === "complete" && Boolean(props.marble.spzUrl);
   const defaultSplatAlignment = splatAlignmentFromMarble(props.marble);
   const splatAlignment =
-    splatAlignmentState.spzUrl === props.marble.spzUrl ? splatAlignmentState.value : defaultSplatAlignment;
+    splatAlignmentState.spzUrl === props.marble.spzUrl
+      ? splatAlignmentState.value
+      : defaultSplatAlignment;
   const setSplatAlignment = useCallback(
     (value: SplatAlignment) => {
       setSplatAlignmentState({ spzUrl: props.marble.spzUrl, value });
@@ -540,25 +652,41 @@ export function SceneView(props: SceneViewProps) {
   const firstPersonActive = wantsSplat && splatLoadState.status === "ready";
 
   const selectedCamera =
-    props.selected?.type === "camera" ? props.cameras.find((camera) => camera.id === props.selected?.id) : undefined;
+    props.selected?.type === "camera"
+      ? props.cameras.find((camera) => camera.id === props.selected?.id)
+      : undefined;
   const splatObjectRegions = useMemo(
-    () => buildSplatObjectRegions(props.instances, props.shapes, props.assets, props.assetById),
+    () =>
+      buildSplatObjectRegions(
+        props.instances,
+        props.shapes,
+        props.assets,
+        props.assetById,
+      ),
     [props.instances, props.shapes, props.assets, props.assetById],
   );
   const selectedSplatRegion = props.selected
-    ? splatObjectRegions.find((region) => selectedRefMatches(region.sourceRef, props.selected))
+    ? splatObjectRegions.find((region) =>
+        selectedRefMatches(region.sourceRef, props.selected),
+      )
     : undefined;
-  const objectSplatControlsVisible = generatedAvailable && splatOpacity > 0 && Boolean(selectedSplatRegion);
+  const objectSplatControlsVisible =
+    generatedAvailable && splatOpacity > 0 && Boolean(selectedSplatRegion);
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     if (activeViewMode !== "blockout") return;
     const assetId = event.dataTransfer.getData("application/x-furniture-asset");
-    const asset = props.assetById?.get(assetId) ?? props.assets.find((item) => item.id === assetId);
+    const asset =
+      props.assetById?.get(assetId) ??
+      props.assets.find((item) => item.id === assetId);
     const position = projectorRef.current?.(event.clientX, event.clientY);
     if (!asset || !position) return;
 
-    const instance = createFurnitureInstance(asset, clampToFloor(position, props.room, props.wallSegments));
+    const instance = createFurnitureInstance(
+      asset,
+      clampToFloor(position, props.room, props.wallSegments),
+    );
     props.onInstancesChange([...props.instances, instance]);
     props.onSelect({ type: "furniture", id: instance.id });
   }
@@ -589,7 +717,9 @@ export function SceneView(props: SceneViewProps) {
         const raw = projectorRef.current?.(event.clientX, event.clientY);
         if (raw) {
           const clamped = clampToFloor(raw, props.room, props.wallSegments);
-          setDragGhost((prev) => (prev ? { ...prev, position: clamped } : null));
+          setDragGhost((prev) =>
+            prev ? { ...prev, position: clamped } : null,
+          );
         }
       }}
       onDragLeave={(event) => {
@@ -627,7 +757,9 @@ export function SceneView(props: SceneViewProps) {
             generatedAvailable={generatedAvailable}
             splatAlignment={splatAlignment}
             splatObjectRegions={splatObjectRegions}
-            objectSplatMode={objectSplatControlsVisible ? objectSplatMode : "off"}
+            objectSplatMode={
+              objectSplatControlsVisible ? objectSplatMode : "off"
+            }
             blockoutOpacity={blockoutOpacity}
             splatOpacity={splatOpacity}
             firstPersonActive={firstPersonActive}
@@ -635,8 +767,12 @@ export function SceneView(props: SceneViewProps) {
             setProjector={(projector) => (projectorRef.current = projector)}
             dragGhost={(() => {
               if (!dragGhost?.position) return undefined;
-              const asset = props.assetById?.get(dragGhost.assetId) ?? props.assets.find((a) => a.id === dragGhost.assetId);
-              return asset ? { asset, position: dragGhost.position } : undefined;
+              const asset =
+                props.assetById?.get(dragGhost.assetId) ??
+                props.assets.find((a) => a.id === dragGhost.assetId);
+              return asset
+                ? { asset, position: dragGhost.position }
+                : undefined;
             })()}
           />
         </XR>
@@ -644,8 +780,12 @@ export function SceneView(props: SceneViewProps) {
       {wantsSplat && objectSplatControlsVisible ? (
         <div className="absolute right-3 bottom-12 flex flex-col gap-1 rounded-md border border-[var(--border-mid)] bg-[#16181d] px-2 py-1 text-xs shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 font-medium text-[var(--text-bright)]">Object</span>
-            <span className="max-w-[7rem] truncate text-[var(--text-secondary)]">{selectedSplatRegion?.label}</span>
+            <span className="shrink-0 font-medium text-[var(--text-bright)]">
+              Object
+            </span>
+            <span className="max-w-[7rem] truncate text-[var(--text-secondary)]">
+              {selectedSplatRegion?.label}
+            </span>
             <div className="flex min-w-0 flex-1 rounded-sm border border-[var(--border-dim)] bg-[var(--surface-input)] p-0.5">
               {OBJECT_SPLAT_MODES.map((mode) => (
                 <button
@@ -671,7 +811,10 @@ export function SceneView(props: SceneViewProps) {
         <SplatOverlayControls />
       ) : null}
       {splatOpacity > 0 && splatLoadState.status !== "ready" ? (
-        <SplatViewportOverlay marble={props.marble} loadState={splatLoadState} />
+        <SplatViewportOverlay
+          marble={props.marble}
+          loadState={splatLoadState}
+        />
       ) : null}
       {splatOpacity > 0 ? (
         <SplatAlignmentControls
@@ -773,10 +916,13 @@ function SceneContent({
   const [hoveredWall, setHoveredWall] = useState<WallId | null>(null);
   const { camera, gl, scene } = useThree();
   // While a WebXR session is presenting, the headset drives the camera —
-  // OrbitControls and the FirstPersonController must not also try to move
-  // it, or the user's view will jitter or be locked at the wrong height.
+  // OrbitControls should be disabled but the FirstPersonController (keyboard
+  // WASD) must remain active so desktop XR emulator sessions can still move.
+  // In a real headset the VrSplatRig handles thumbstick locomotion, and the
+  // FirstPersonController key listeners fire but produce zero delta (no keys
+  // held), so both can safely coexist.
   const xrPresenting = useXR((state) => state.session != null);
-  const firstPersonControlsActive = firstPersonActive && !xrPresenting;
+  const firstPersonControlsActive = firstPersonActive;
   useEffect(() => {
     registerSceneCapture(() =>
       captureLayoutPano(scene, gl, roomRef.current, wallSegmentsRef.current),
@@ -853,7 +999,13 @@ function SceneContent({
 
     function handleTrackpadWheel(event: WheelEvent) {
       const controls = orbitControlsRef.current;
-      if (firstPersonActive || !controls?.enabled || event.ctrlKey || !isTrackpadWheel(event)) return;
+      if (
+        firstPersonActive ||
+        !controls?.enabled ||
+        event.ctrlKey ||
+        !isTrackpadWheel(event)
+      )
+        return;
       if (
         shapeResizeRef.current ||
         shapeRotateRef.current ||
@@ -862,7 +1014,8 @@ function SceneContent({
         wallDragRef.current ||
         openingDragRef.current ||
         segmentDragRef.current
-      ) return;
+      )
+        return;
 
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -873,17 +1026,28 @@ function SceneContent({
       const rotateSpeed = 0.0032;
       spherical.theta += event.deltaX * rotateSpeed;
       spherical.phi += event.deltaY * rotateSpeed;
-      spherical.phi = THREE.MathUtils.clamp(spherical.phi, 0.08, Math.PI / 2.05);
+      spherical.phi = THREE.MathUtils.clamp(
+        spherical.phi,
+        0.08,
+        Math.PI / 2.05,
+      );
       spherical.makeSafe();
 
-      camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));
+      camera.position
+        .copy(target)
+        .add(new THREE.Vector3().setFromSpherical(spherical));
       camera.lookAt(target);
       controls.update();
     }
 
-    element.addEventListener("wheel", handleTrackpadWheel, { capture: true, passive: false });
+    element.addEventListener("wheel", handleTrackpadWheel, {
+      capture: true,
+      passive: false,
+    });
     return () => {
-      element.removeEventListener("wheel", handleTrackpadWheel, { capture: true });
+      element.removeEventListener("wheel", handleTrackpadWheel, {
+        capture: true,
+      });
     };
   }, [camera, firstPersonActive, gl.domElement]);
 
@@ -891,7 +1055,10 @@ function SceneContent({
     (clientX: number, clientY: number): Vec3 | null => {
       const rect = gl.domElement.getBoundingClientRect();
       const { pointer, raycaster, floorPoint } = pointerScratchRef.current;
-      pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+      pointer.set(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1,
+      );
       raycaster.setFromCamera(pointer, camera);
       const hit = raycaster.ray.intersectPlane(FLOOR_PLANE, floorPoint);
       if (!hit) return null;
@@ -901,7 +1068,11 @@ function SceneContent({
   );
 
   const projectPointerToWallPlane = useCallback(
-    (wall: WallId, clientX: number, clientY: number): { offsetAlong: number; y: number; offsetPerp: number } | null => {
+    (
+      wall: WallId,
+      clientX: number,
+      clientY: number,
+    ): { offsetAlong: number; y: number; offsetPerp: number } | null => {
       const rect = gl.domElement.getBoundingClientRect();
       const ndc = new THREE.Vector2(
         ((clientX - rect.left) / rect.width) * 2 - 1,
@@ -911,10 +1082,14 @@ function SceneContent({
       ray.setFromCamera(ndc, camera);
       const room = roomRef.current;
       const center = wallPosition(room, wall);
-      const normal = wall === "north" || wall === "south"
-        ? new THREE.Vector3(0, 0, 1)
-        : new THREE.Vector3(1, 0, 0);
-      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, new THREE.Vector3(center[0], 0, center[2]));
+      const normal =
+        wall === "north" || wall === "south"
+          ? new THREE.Vector3(0, 0, 1)
+          : new THREE.Vector3(1, 0, 0);
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        normal,
+        new THREE.Vector3(center[0], 0, center[2]),
+      );
       const target = new THREE.Vector3();
       const hit = ray.ray.intersectPlane(plane, target);
       if (!hit) return null;
@@ -922,10 +1097,18 @@ function SceneContent({
       const cz = (room.minZ + room.maxZ) / 2;
       if (wall === "east" || wall === "west") {
         const sign = wall === "east" ? 1 : -1;
-        return { offsetAlong: target.z - cz, y: target.y, offsetPerp: (target.x - center[0]) * sign };
+        return {
+          offsetAlong: target.z - cz,
+          y: target.y,
+          offsetPerp: (target.x - center[0]) * sign,
+        };
       }
       const sign = wall === "north" ? 1 : -1;
-      return { offsetAlong: target.x - cx, y: target.y, offsetPerp: (target.z - center[2]) * sign };
+      return {
+        offsetAlong: target.x - cx,
+        y: target.y,
+        offsetPerp: (target.z - center[2]) * sign,
+      };
     },
     [camera, gl.domElement],
   );
@@ -935,8 +1118,16 @@ function SceneContent({
       connector: WallConnectorRef,
       clientX: number,
       clientY: number,
-    ): { offsetAlong: number; y: number; descriptor: WallConnectorDescriptor } | null => {
-      const descriptor = connectorDescriptor(roomRef.current, wallSegmentsRef.current, connector);
+    ): {
+      offsetAlong: number;
+      y: number;
+      descriptor: WallConnectorDescriptor;
+    } | null => {
+      const descriptor = connectorDescriptor(
+        roomRef.current,
+        wallSegmentsRef.current,
+        connector,
+      );
       if (!descriptor) return null;
 
       const rect = gl.domElement.getBoundingClientRect();
@@ -946,9 +1137,10 @@ function SceneContent({
       );
       const ray = new THREE.Raycaster();
       ray.setFromCamera(ndc, camera);
-      const normal = descriptor.axis === "z"
-        ? new THREE.Vector3(1, 0, 0)
-        : new THREE.Vector3(0, 0, 1);
+      const normal =
+        descriptor.axis === "z"
+          ? new THREE.Vector3(1, 0, 0)
+          : new THREE.Vector3(0, 0, 1);
       const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
         normal,
         new THREE.Vector3(descriptor.position[0], 0, descriptor.position[2]),
@@ -1000,7 +1192,8 @@ function SceneContent({
       const deltaX = session.latestClientX - session.startClientX;
       const deltaY = session.latestClientY - session.startClientY;
       const metersAlongAxis =
-        (deltaX * session.screenAxisX + deltaY * session.screenAxisY) / session.screenAxisLengthSq;
+        (deltaX * session.screenAxisX + deltaY * session.screenAxisY) /
+        session.screenAxisLengthSq;
       return session.startValue + metersAlongAxis;
     }
 
@@ -1011,15 +1204,22 @@ function SceneContent({
       session.rafId = null;
       const screenValue = valueFromScreenDrag(session);
       if (screenValue !== null) {
-        onRoomChangeRef.current(resizeRoomFromWall(roomRef.current, session.wall, screenValue));
+        onRoomChangeRef.current(
+          resizeRoomFromWall(roomRef.current, session.wall, screenValue),
+        );
         return;
       }
 
-      const point = projectPointerToFloor(session.latestClientX, session.latestClientY);
+      const point = projectPointerToFloor(
+        session.latestClientX,
+        session.latestClientY,
+      );
       if (!point) return;
 
       const value = valueForWallAxis(session.wall, point) - session.grabOffset;
-      onRoomChangeRef.current(resizeRoomFromWall(roomRef.current, session.wall, value));
+      onRoomChangeRef.current(
+        resizeRoomFromWall(roomRef.current, session.wall, value),
+      );
     }
 
     function scheduleWallDragUpdate() {
@@ -1030,7 +1230,11 @@ function SceneContent({
 
     function endWallDrag(pointerId?: number) {
       const session = wallDragRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
 
       if (session.rafId !== null) {
         window.cancelAnimationFrame(session.rafId);
@@ -1069,16 +1273,26 @@ function SceneContent({
       endWallDrag();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endWallDrag();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement, projectPointerToFloor]);
@@ -1091,20 +1305,29 @@ function SceneContent({
       if (!session) return;
 
       session.rafId = null;
-      const instance = instancesRef.current.find((item) => item.id === session.instanceId);
+      const instance = instancesRef.current.find(
+        (item) => item.id === session.instanceId,
+      );
       if (!instance) return;
 
       let nextAxisScale = session.startScale[session.axis];
       if (session.axis === 1) {
-        nextAxisScale = session.startScale[1] + session.sign * (session.startClientY - session.latestClientY) * 0.0125;
+        nextAxisScale =
+          session.startScale[1] +
+          session.sign *
+            (session.startClientY - session.latestClientY) *
+            0.0125;
       } else {
         if (session.screenAxisLengthSq < 16) return;
         const deltaX = session.latestClientX - session.startClientX;
         const deltaY = session.latestClientY - session.startClientY;
         const meters =
-          (deltaX * session.screenAxisX + deltaY * session.screenAxisY) / session.screenAxisLengthSq;
+          (deltaX * session.screenAxisX + deltaY * session.screenAxisY) /
+          session.screenAxisLengthSq;
         const baseSize = Math.max(0.1, session.baseSize[session.axis]);
-        nextAxisScale = session.startScale[session.axis] + session.sign * (2 * meters) / baseSize;
+        nextAxisScale =
+          session.startScale[session.axis] +
+          (session.sign * (2 * meters)) / baseSize;
       }
 
       const nextScale: Vec3 = [...session.startScale];
@@ -1112,7 +1335,13 @@ function SceneContent({
 
       onInstancesChangeRef.current(
         instancesRef.current.map((item) =>
-          item.id === session.instanceId ? { ...item, position: [item.position[0], 0, item.position[2]], scale: nextScale } : item,
+          item.id === session.instanceId
+            ? {
+                ...item,
+                position: [item.position[0], 0, item.position[2]],
+                scale: nextScale,
+              }
+            : item,
         ),
       );
     }
@@ -1125,7 +1354,11 @@ function SceneContent({
 
     function endInstanceScale(pointerId?: number) {
       const session = instanceScaleRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
 
       if (session.rafId !== null) {
         window.cancelAnimationFrame(session.rafId);
@@ -1160,16 +1393,26 @@ function SceneContent({
       endInstanceScale();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endInstanceScale();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement, projectPointerToFloor]);
@@ -1182,7 +1425,10 @@ function SceneContent({
       if (!session) return;
 
       session.rafId = null;
-      const point = projectPointerToFloor(session.latestClientX, session.latestClientY);
+      const point = projectPointerToFloor(
+        session.latestClientX,
+        session.latestClientY,
+      );
       if (!point) return;
 
       const nextPosition = clampToFloor(
@@ -1198,7 +1444,9 @@ function SceneContent({
       if (session.target.type === "furniture") {
         onInstancesChangeRef.current(
           instancesRef.current.map((instance) =>
-            instance.id === session.target.id ? { ...instance, position: [nextPosition[0], 0, nextPosition[2]] } : instance,
+            instance.id === session.target.id
+              ? { ...instance, position: [nextPosition[0], 0, nextPosition[2]] }
+              : instance,
           ),
         );
         return;
@@ -1207,7 +1455,9 @@ function SceneContent({
       if (session.target.type === "camera") {
         onCamerasChangeRef.current(
           camerasRef.current.map((camera) =>
-            camera.id === session.target.id ? { ...camera, position: nextPosition } : camera,
+            camera.id === session.target.id
+              ? { ...camera, position: nextPosition }
+              : camera,
           ),
         );
         return;
@@ -1216,7 +1466,14 @@ function SceneContent({
       onShapesChangeRef.current(
         shapesRef.current.map((shape) =>
           shape.id === session.target.id
-            ? { ...shape, position: [nextPosition[0], groundedShapeY(shape.kind, shape.scale[1]), nextPosition[2]] }
+            ? {
+                ...shape,
+                position: [
+                  nextPosition[0],
+                  groundedShapeY(shape.kind, shape.scale[1]),
+                  nextPosition[2],
+                ],
+              }
             : shape,
         ),
       );
@@ -1230,7 +1487,11 @@ function SceneContent({
 
     function endObjectDrag(pointerId?: number) {
       const session = objectDragRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
 
       if (session.rafId !== null) {
         window.cancelAnimationFrame(session.rafId);
@@ -1269,16 +1530,26 @@ function SceneContent({
       endObjectDrag();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endObjectDrag();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement, projectPointerToFloor]);
@@ -1291,20 +1562,29 @@ function SceneContent({
       if (!session) return;
 
       session.rafId = null;
-      const shape = shapesRef.current.find((item) => item.id === session.shapeId);
+      const shape = shapesRef.current.find(
+        (item) => item.id === session.shapeId,
+      );
       if (!shape) return;
 
       let nextAxisScale = session.startScale[session.axis];
       if (session.axis === 1) {
-        nextAxisScale = session.startScale[1] + session.sign * (session.startClientY - session.latestClientY) * 0.0125;
+        nextAxisScale =
+          session.startScale[1] +
+          session.sign *
+            (session.startClientY - session.latestClientY) *
+            0.0125;
       } else {
         const sensitivity = session.axis === 2 ? 1 : 2;
         if (session.screenAxisLengthSq >= 16) {
           const deltaX = session.latestClientX - session.startClientX;
           const deltaY = session.latestClientY - session.startClientY;
           const meters =
-            (deltaX * session.screenAxisX + deltaY * session.screenAxisY) / session.screenAxisLengthSq;
-          nextAxisScale = session.startScale[session.axis] + session.sign * sensitivity * meters;
+            (deltaX * session.screenAxisX + deltaY * session.screenAxisY) /
+            session.screenAxisLengthSq;
+          nextAxisScale =
+            session.startScale[session.axis] +
+            session.sign * sensitivity * meters;
         } else {
           const nextLocalValue = shapeLocalPointerValue(
             shape,
@@ -1314,7 +1594,11 @@ function SceneContent({
             projectPointerToFloor,
           );
           if (nextLocalValue === null) return;
-          nextAxisScale = session.startScale[session.axis] + session.sign * sensitivity * (nextLocalValue - session.startLocalValue);
+          nextAxisScale =
+            session.startScale[session.axis] +
+            session.sign *
+              sensitivity *
+              (nextLocalValue - session.startLocalValue);
         }
       }
 
@@ -1323,7 +1607,15 @@ function SceneContent({
       onShapesChangeRef.current(
         shapesRef.current.map((item) =>
           item.id === session.shapeId
-            ? { ...item, position: [item.position[0], groundedShapeY(item.kind, nextScale[1]), item.position[2]], scale: nextScale }
+            ? {
+                ...item,
+                position: [
+                  item.position[0],
+                  groundedShapeY(item.kind, nextScale[1]),
+                  item.position[2],
+                ],
+                scale: nextScale,
+              }
             : item,
         ),
       );
@@ -1337,7 +1629,11 @@ function SceneContent({
 
     function endShapeResize(pointerId?: number) {
       const session = shapeResizeRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
 
       if (session.rafId !== null) {
         window.cancelAnimationFrame(session.rafId);
@@ -1376,16 +1672,26 @@ function SceneContent({
       endShapeResize();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endShapeResize();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement, projectPointerToFloor]);
@@ -1398,16 +1704,29 @@ function SceneContent({
       if (!session) return;
 
       session.rafId = null;
-      const shape = shapesRef.current.find((item) => item.id === session.shapeId);
+      const shape = shapesRef.current.find(
+        (item) => item.id === session.shapeId,
+      );
       if (!shape) return;
 
-      const nextAngle = shapePointerAngle(shape, session.latestClientX, session.latestClientY, projectPointerToFloor);
+      const nextAngle = shapePointerAngle(
+        shape,
+        session.latestClientX,
+        session.latestClientY,
+        projectPointerToFloor,
+      );
       if (nextAngle === null) return;
 
       const nextRotation: Vec3 = [...session.startRotation];
-      nextRotation[1] = session.startRotation[1] - shortestAngleDelta(nextAngle, session.startAngle);
+      nextRotation[1] =
+        session.startRotation[1] -
+        shortestAngleDelta(nextAngle, session.startAngle);
       onShapesChangeRef.current(
-        shapesRef.current.map((item) => (item.id === session.shapeId ? { ...item, rotation: nextRotation } : item)),
+        shapesRef.current.map((item) =>
+          item.id === session.shapeId
+            ? { ...item, rotation: nextRotation }
+            : item,
+        ),
       );
     }
 
@@ -1419,7 +1738,11 @@ function SceneContent({
 
     function endShapeRotate(pointerId?: number) {
       const session = shapeRotateRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
 
       if (session.rafId !== null) {
         window.cancelAnimationFrame(session.rafId);
@@ -1458,16 +1781,26 @@ function SceneContent({
       endShapeRotate();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endShapeRotate();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement, projectPointerToFloor]);
@@ -1483,7 +1816,9 @@ function SceneContent({
       if (!session) return;
 
       session.rafId = null;
-      const instance = instancesRef.current.find((item) => item.id === session.instanceId);
+      const instance = instancesRef.current.find(
+        (item) => item.id === session.instanceId,
+      );
       if (!instance) return;
 
       const nextAngle = pointerAngleAroundPosition(
@@ -1496,7 +1831,8 @@ function SceneContent({
 
       // Continuous Y-rotation following the pointer, then snap to 15° steps.
       const continuous =
-        session.startRotation[1] - shortestAngleDelta(nextAngle, session.startAngle);
+        session.startRotation[1] -
+        shortestAngleDelta(nextAngle, session.startAngle);
       const snapped = Math.round(continuous / SNAP_RADIANS) * SNAP_RADIANS;
       if (Math.abs(snapped - instance.rotation[1]) < 1e-4) return;
 
@@ -1507,7 +1843,9 @@ function SceneContent({
       ];
       onInstancesChangeRef.current(
         instancesRef.current.map((item) =>
-          item.id === session.instanceId ? { ...item, rotation: nextRotation } : item,
+          item.id === session.instanceId
+            ? { ...item, rotation: nextRotation }
+            : item,
         ),
       );
     }
@@ -1520,7 +1858,11 @@ function SceneContent({
 
     function endInstanceRotate(pointerId?: number) {
       const session = instanceRotateRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
 
       if (session.rafId !== null) {
         window.cancelAnimationFrame(session.rafId);
@@ -1558,16 +1900,26 @@ function SceneContent({
       endInstanceRotate();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endInstanceRotate();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement, projectPointerToFloor]);
@@ -1580,9 +1932,19 @@ function SceneContent({
       if (!session) return;
       session.rafId = null;
       const connectorProjection = session.connector
-        ? projectPointerToConnectorPlane(session.connector, session.latestClientX, session.latestClientY)
+        ? projectPointerToConnectorPlane(
+            session.connector,
+            session.latestClientX,
+            session.latestClientY,
+          )
         : null;
-      const projection = connectorProjection ?? projectPointerToWallPlane(session.wall, session.latestClientX, session.latestClientY);
+      const projection =
+        connectorProjection ??
+        projectPointerToWallPlane(
+          session.wall,
+          session.latestClientX,
+          session.latestClientY,
+        );
       if (!projection) return;
 
       const room = roomRef.current;
@@ -1590,21 +1952,44 @@ function SceneContent({
         const door = doorsRef.current.find((item) => item.id === session.id);
         if (!door) return;
         if (session.mode === "scale") {
-          const widthFromDelta = session.startWidth + Math.abs(projection.offsetAlong - session.startPointerAlong) * 2;
+          const widthFromDelta =
+            session.startWidth +
+            Math.abs(projection.offsetAlong - session.startPointerAlong) * 2;
           const nextWidth = connectorProjection
-            ? Math.min(connectorProjection.descriptor.length * 0.95, Math.max(0.25, widthFromDelta))
-            : clampOpeningWidthOnWallRun(room, wallSegmentsRef.current, session.wall, session.startOffset, widthFromDelta);
-          const nextHeight = Math.min(room.height - 0.05, Math.max(0.6, session.startHeight + projection.y - session.startPointerY));
+            ? Math.min(
+                connectorProjection.descriptor.length * 0.95,
+                Math.max(0.25, widthFromDelta),
+              )
+            : clampOpeningWidthOnWallRun(
+                room,
+                wallSegmentsRef.current,
+                session.wall,
+                session.startOffset,
+                widthFromDelta,
+              );
+          const nextHeight = Math.min(
+            room.height - 0.05,
+            Math.max(
+              0.6,
+              session.startHeight + projection.y - session.startPointerY,
+            ),
+          );
           onDoorsChangeRef.current(
             doorsRef.current.map((item) =>
-              item.id === session.id ? { ...item, width: nextWidth, height: nextHeight } : item,
+              item.id === session.id
+                ? { ...item, width: nextWidth, height: nextHeight }
+                : item,
             ),
           );
           return;
         }
         const rawOffset = projection.offsetAlong - session.grabOffsetAlong;
         const nextOffset = connectorProjection
-          ? clampConnectorOffset(connectorProjection.descriptor, rawOffset, door.width)
+          ? clampConnectorOffset(
+              connectorProjection.descriptor,
+              rawOffset,
+              door.width,
+            )
           : clampOpeningOffsetOnWallRun(
               room,
               wallSegmentsRef.current,
@@ -1625,21 +2010,44 @@ function SceneContent({
       const window = windowsRef.current.find((item) => item.id === session.id);
       if (!window) return;
       if (session.mode === "scale") {
-        const widthFromDelta = session.startWidth + Math.abs(projection.offsetAlong - session.startPointerAlong) * 2;
+        const widthFromDelta =
+          session.startWidth +
+          Math.abs(projection.offsetAlong - session.startPointerAlong) * 2;
         const nextWidth = connectorProjection
-          ? Math.min(connectorProjection.descriptor.length * 0.95, Math.max(0.25, widthFromDelta))
-          : clampOpeningWidthOnWallRun(room, wallSegmentsRef.current, session.wall, session.startOffset, widthFromDelta);
-        const nextHeight = Math.min(room.height - window.baseY - 0.05, Math.max(0.3, session.startHeight + projection.y - session.startPointerY));
+          ? Math.min(
+              connectorProjection.descriptor.length * 0.95,
+              Math.max(0.25, widthFromDelta),
+            )
+          : clampOpeningWidthOnWallRun(
+              room,
+              wallSegmentsRef.current,
+              session.wall,
+              session.startOffset,
+              widthFromDelta,
+            );
+        const nextHeight = Math.min(
+          room.height - window.baseY - 0.05,
+          Math.max(
+            0.3,
+            session.startHeight + projection.y - session.startPointerY,
+          ),
+        );
         onWindowsChangeRef.current(
           windowsRef.current.map((item) =>
-            item.id === session.id ? { ...item, width: nextWidth, height: nextHeight } : item,
+            item.id === session.id
+              ? { ...item, width: nextWidth, height: nextHeight }
+              : item,
           ),
         );
         return;
       }
       const rawOffset = projection.offsetAlong - session.grabOffsetAlong;
       const nextOffset = connectorProjection
-        ? clampConnectorOffset(connectorProjection.descriptor, rawOffset, window.width)
+        ? clampConnectorOffset(
+            connectorProjection.descriptor,
+            rawOffset,
+            window.width,
+          )
         : clampOpeningOffsetOnWallRun(
             room,
             wallSegmentsRef.current,
@@ -1656,7 +2064,9 @@ function SceneContent({
       if (nextOffset === window.offset && nextBaseY === window.baseY) return;
       onWindowsChangeRef.current(
         windowsRef.current.map((item) =>
-          item.id === session.id ? { ...item, offset: nextOffset, baseY: nextBaseY } : item,
+          item.id === session.id
+            ? { ...item, offset: nextOffset, baseY: nextBaseY }
+            : item,
         ),
       );
     }
@@ -1669,7 +2079,11 @@ function SceneContent({
 
     function endOpeningDrag(pointerId?: number) {
       const session = openingDragRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
       if (session.rafId !== null) window.cancelAnimationFrame(session.rafId);
       try {
         if (element.hasPointerCapture(session.pointerId)) {
@@ -1699,19 +2113,33 @@ function SceneContent({
       endOpeningDrag();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endOpeningDrag();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
-  }, [gl.domElement, projectPointerToConnectorPlane, projectPointerToWallPlane]);
+  }, [
+    gl.domElement,
+    projectPointerToConnectorPlane,
+    projectPointerToWallPlane,
+  ]);
 
   useEffect(() => {
     const element = gl.domElement;
@@ -1731,11 +2159,21 @@ function SceneContent({
       const deltaX = session.latestClientX - session.startClientX;
       const deltaY = session.latestClientY - session.startClientY;
       const meters =
-        (deltaX * session.screenAxisX + deltaY * session.screenAxisY) / session.screenAxisLengthSq;
-      const nextDisplacement = clampDisplacement(session.startDisplacement + meters, room, session.wall);
+        (deltaX * session.screenAxisX + deltaY * session.screenAxisY) /
+        session.screenAxisLengthSq;
+      const nextDisplacement = clampDisplacement(
+        session.startDisplacement + meters,
+        room,
+        session.wall,
+      );
       if (Math.abs(nextDisplacement - segment.displacement) < 0.001) return;
       onWallSegmentsChangeRef.current(
-        setSegmentDisplacement(segmentation, session.wall, session.segmentId, nextDisplacement),
+        setSegmentDisplacement(
+          segmentation,
+          session.wall,
+          session.segmentId,
+          nextDisplacement,
+        ),
       );
     }
 
@@ -1747,7 +2185,11 @@ function SceneContent({
 
     function endSegmentDrag(pointerId?: number) {
       const session = segmentDragRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
       if (session.rafId !== null) window.cancelAnimationFrame(session.rafId);
       try {
         if (element.hasPointerCapture(session.pointerId)) {
@@ -1777,16 +2219,26 @@ function SceneContent({
       endSegmentDrag();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endSegmentDrag();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement]);
@@ -1808,9 +2260,15 @@ function SceneContent({
       const deltaX = session.latestClientX - session.startClientX;
       const deltaY = session.latestClientY - session.startClientY;
       const meters =
-        (deltaX * session.screenAxisX + deltaY * session.screenAxisY) / session.screenAxisLengthSq;
-      const nextFraction = session.startFraction + (meters - session.grabOffset) / length;
-      const next = setConnectorBoundaryFraction(segmentation, session.connector, nextFraction);
+        (deltaX * session.screenAxisX + deltaY * session.screenAxisY) /
+        session.screenAxisLengthSq;
+      const nextFraction =
+        session.startFraction + (meters - session.grabOffset) / length;
+      const next = setConnectorBoundaryFraction(
+        segmentation,
+        session.connector,
+        nextFraction,
+      );
       if (next === segmentation) return;
       onWallSegmentsChangeRef.current(next);
     }
@@ -1823,7 +2281,11 @@ function SceneContent({
 
     function endConnectorDrag(pointerId?: number) {
       const session = connectorDragRef.current;
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return;
+      if (
+        !session ||
+        (pointerId !== undefined && session.pointerId !== pointerId)
+      )
+        return;
       if (session.rafId !== null) window.cancelAnimationFrame(session.rafId);
       try {
         if (element.hasPointerCapture(session.pointerId)) {
@@ -1853,26 +2315,40 @@ function SceneContent({
       endConnectorDrag();
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
-    window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+    window.addEventListener("pointercancel", handlePointerUp, {
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
 
     return () => {
       endConnectorDrag();
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
       window.removeEventListener("blur", handleBlur);
     };
   }, [gl.domElement]);
 
   function updateInstance(next: FurnitureInstance) {
-    onInstancesChange(instances.map((instance) => (instance.id === next.id ? next : instance)));
+    onInstancesChange(
+      instances.map((instance) => (instance.id === next.id ? next : instance)),
+    );
   }
 
   function updateCamera(next: SceneCamera) {
-    onCamerasChange(cameras.map((camera) => (camera.id === next.id ? next : camera)));
+    onCamerasChange(
+      cameras.map((camera) => (camera.id === next.id ? next : camera)),
+    );
   }
 
   function handleTransformActiveChange(active: boolean) {
@@ -1883,7 +2359,8 @@ function SceneContent({
 
   function handleFloorPointerDown(event: ThreeEvent<PointerEvent>) {
     if (viewMode !== "blockout") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     if (tool !== "add-shape" && tool !== "add-camera") {
       onSelect(null);
@@ -1901,23 +2378,39 @@ function SceneContent({
       return;
     }
 
-    const shape = createCustomShape(activeShapeKind, clampToFloor(point, room, wallSegments));
+    const shape = createCustomShape(
+      activeShapeKind,
+      clampToFloor(point, room, wallSegments),
+    );
     onShapesChange([...shapes, shape]);
     onSelect({ type: "shape", id: shape.id });
     onToolChange("select");
   }
 
-  function handleWallPointerDown(wall: WallId, event: ThreeEvent<PointerEvent>) {
+  function handleWallPointerDown(
+    wall: WallId,
+    event: ThreeEvent<PointerEvent>,
+  ) {
     if (viewMode !== "blockout") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
     const room = roomRef.current;
-    const projection = projectPointerToWallPlane(wall, event.clientX, event.clientY);
+    const projection = projectPointerToWallPlane(
+      wall,
+      event.clientX,
+      event.clientY,
+    );
 
     if (tool === "add-door") {
       const newDoor = createDoor(room, wall);
-      newDoor.offset = clampWallOffset(room, wall, projection?.offsetAlong ?? 0, newDoor.width);
+      newDoor.offset = clampWallOffset(
+        room,
+        wall,
+        projection?.offsetAlong ?? 0,
+        newDoor.width,
+      );
       onDoorsChangeRef.current([...doorsRef.current, newDoor]);
       onSelect({ type: "door", id: newDoor.id });
       onToolChange("select");
@@ -1926,7 +2419,12 @@ function SceneContent({
 
     if (tool === "add-window") {
       const newWindow = createWindowOpening(room, wall);
-      newWindow.offset = clampWallOffset(room, wall, projection?.offsetAlong ?? 0, newWindow.width);
+      newWindow.offset = clampWallOffset(
+        room,
+        wall,
+        projection?.offsetAlong ?? 0,
+        newWindow.width,
+      );
       if (projection) {
         newWindow.baseY = clampWindowVerticalOffset(
           room,
@@ -1961,10 +2459,20 @@ function SceneContent({
     }
 
     const point = projectPointerToFloor(event.clientX, event.clientY);
-    const projectedValue = point ? (wall === "east" || wall === "west" ? point[0] : point[2]) : 0;
+    const projectedValue = point
+      ? wall === "east" || wall === "west"
+        ? point[0]
+        : point[2]
+      : 0;
     const wallCenter = wallPosition(roomRef.current, wall);
-    const wallAxisValue = wall === "east" || wall === "west" ? wallCenter[0] : wallCenter[2];
-    const screenAxis = screenAxisForWall(wall, wallCenter, camera, gl.domElement);
+    const wallAxisValue =
+      wall === "east" || wall === "west" ? wallCenter[0] : wallCenter[2];
+    const screenAxis = screenAxisForWall(
+      wall,
+      wallCenter,
+      camera,
+      gl.domElement,
+    );
     const controls = orbitControlsRef.current;
 
     wallDragRef.current = {
@@ -2003,7 +2511,8 @@ function SceneContent({
   ) {
     if (viewMode !== "blockout") return;
     if (tool !== "select" && tool !== "move" && tool !== "scale") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     const point = projectPointerToFloor(event.clientX, event.clientY);
     if (!point) return;
@@ -2038,14 +2547,30 @@ function SceneContent({
   ) {
     if (viewMode !== "blockout") return;
     if (tool !== "select" && tool !== "move" && tool !== "scale") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
-    const startLocalValue = axis === 1 ? 0 : shapeLocalPointerValue(shape, axis, event.clientX, event.clientY, projectPointerToFloor);
+    const startLocalValue =
+      axis === 1
+        ? 0
+        : shapeLocalPointerValue(
+            shape,
+            axis,
+            event.clientX,
+            event.clientY,
+            projectPointerToFloor,
+          );
     if (startLocalValue === null) return;
 
     const controls = orbitControlsRef.current;
-    const screenAxis = screenAxisForLocalAxis(shape.position, shape.rotation, axis, camera, gl.domElement);
+    const screenAxis = screenAxisForLocalAxis(
+      shape.position,
+      shape.rotation,
+      axis,
+      camera,
+      gl.domElement,
+    );
     shapeResizeRef.current = {
       shapeId: shape.id,
       pointerId: event.pointerId,
@@ -2087,12 +2612,19 @@ function SceneContent({
   ) {
     if (viewMode !== "blockout") return;
     if (tool !== "select" && tool !== "move" && tool !== "scale") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
 
     const controls = orbitControlsRef.current;
-    const screenAxis = screenAxisForLocalAxis(instance.position, instance.rotation, axis, camera, gl.domElement);
+    const screenAxis = screenAxisForLocalAxis(
+      instance.position,
+      instance.rotation,
+      axis,
+      camera,
+      gl.domElement,
+    );
     instanceScaleRef.current = {
       instanceId: instance.id,
       pointerId: event.pointerId,
@@ -2121,9 +2653,13 @@ function SceneContent({
     onSelect({ type: "furniture", id: instance.id });
   }
 
-  function handleInstanceRotatePointerDown(instance: FurnitureInstance, event: ThreeEvent<PointerEvent>) {
+  function handleInstanceRotatePointerDown(
+    instance: FurnitureInstance,
+    event: ThreeEvent<PointerEvent>,
+  ) {
     if (viewMode !== "blockout") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
     const startAngle = pointerAngleAroundPosition(
@@ -2158,13 +2694,22 @@ function SceneContent({
     onSelect({ type: "furniture", id: instance.id });
   }
 
-  function handleShapeRotatePointerDown(shape: CustomShape, event: ThreeEvent<PointerEvent>) {
+  function handleShapeRotatePointerDown(
+    shape: CustomShape,
+    event: ThreeEvent<PointerEvent>,
+  ) {
     if (viewMode !== "blockout") return;
     if (tool !== "select" && tool !== "move" && tool !== "rotate") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
-    const startAngle = shapePointerAngle(shape, event.clientX, event.clientY, projectPointerToFloor);
+    const startAngle = shapePointerAngle(
+      shape,
+      event.clientX,
+      event.clientY,
+      projectPointerToFloor,
+    );
     if (startAngle === null) return;
 
     const controls = orbitControlsRef.current;
@@ -2201,17 +2746,25 @@ function SceneContent({
     forcedMode?: OpeningDragSession["mode"],
   ) {
     if (viewMode !== "blockout") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
     onSelect({ type: kind, id: target.id });
 
-    if (!forcedMode && tool !== "select" && tool !== "move" && tool !== "scale") return;
+    if (!forcedMode && tool !== "select" && tool !== "move" && tool !== "scale")
+      return;
 
     const connectorProjection = target.connector
-      ? projectPointerToConnectorPlane(target.connector, event.clientX, event.clientY)
+      ? projectPointerToConnectorPlane(
+          target.connector,
+          event.clientX,
+          event.clientY,
+        )
       : null;
-    const projection = connectorProjection ?? projectPointerToWallPlane(target.wall, event.clientX, event.clientY);
+    const projection =
+      connectorProjection ??
+      projectPointerToWallPlane(target.wall, event.clientX, event.clientY);
     if (!projection) return;
 
     const baseY = kind === "door" ? 0 : (target as WindowOpening).baseY;
@@ -2246,18 +2799,39 @@ function SceneContent({
     }
   }
 
-  function handleSegmentPointerDown(wall: WallId, segment: WallSegment, event: ThreeEvent<PointerEvent>) {
+  function handleSegmentPointerDown(
+    wall: WallId,
+    segment: WallSegment,
+    event: ThreeEvent<PointerEvent>,
+  ) {
     if (viewMode !== "blockout") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
 
     if (tool === "add-door") {
       const room = roomRef.current;
-      const projection = projectPointerToWallPlane(wall, event.clientX, event.clientY);
+      const projection = projectPointerToWallPlane(
+        wall,
+        event.clientX,
+        event.clientY,
+      );
       const newDoor = createDoor(room, wall);
-      newDoor.width = Math.min(newDoor.width, Math.max(0.35, (segment.end - segment.start) * wallAxisLength(room, wall) * 0.9));
-      newDoor.offset = clampSegmentOffset(room, wall, segment, projection?.offsetAlong ?? 0, newDoor.width);
+      newDoor.width = Math.min(
+        newDoor.width,
+        Math.max(
+          0.35,
+          (segment.end - segment.start) * wallAxisLength(room, wall) * 0.9,
+        ),
+      );
+      newDoor.offset = clampSegmentOffset(
+        room,
+        wall,
+        segment,
+        projection?.offsetAlong ?? 0,
+        newDoor.width,
+      );
       onDoorsChangeRef.current([...doorsRef.current, newDoor]);
       onSelect({ type: "door", id: newDoor.id });
       onToolChange("select");
@@ -2266,10 +2840,26 @@ function SceneContent({
 
     if (tool === "add-window") {
       const room = roomRef.current;
-      const projection = projectPointerToWallPlane(wall, event.clientX, event.clientY);
+      const projection = projectPointerToWallPlane(
+        wall,
+        event.clientX,
+        event.clientY,
+      );
       const newWindow = createWindowOpening(room, wall);
-      newWindow.width = Math.min(newWindow.width, Math.max(0.35, (segment.end - segment.start) * wallAxisLength(room, wall) * 0.9));
-      newWindow.offset = clampSegmentOffset(room, wall, segment, projection?.offsetAlong ?? 0, newWindow.width);
+      newWindow.width = Math.min(
+        newWindow.width,
+        Math.max(
+          0.35,
+          (segment.end - segment.start) * wallAxisLength(room, wall) * 0.9,
+        ),
+      );
+      newWindow.offset = clampSegmentOffset(
+        room,
+        wall,
+        segment,
+        projection?.offsetAlong ?? 0,
+        newWindow.width,
+      );
       if (projection) {
         newWindow.baseY = clampWindowVerticalOffset(
           room,
@@ -2285,7 +2875,11 @@ function SceneContent({
 
     if (tool === "cut-wall") {
       const room = roomRef.current;
-      const projection = projectPointerToWallPlane(wall, event.clientX, event.clientY);
+      const projection = projectPointerToWallPlane(
+        wall,
+        event.clientX,
+        event.clientY,
+      );
       const offsetAlong = projection?.offsetAlong ?? 0;
       const fraction = offsetToFraction(room, wall, offsetAlong);
       const result = cutWallAt(wallSegmentsRef.current, wall, fraction);
@@ -2307,19 +2901,34 @@ function SceneContent({
     beginSegmentDrag(segment.id, wall, segment.displacement, event);
   }
 
-  function handleConnectorPointerDown(connector: WallConnectorRef, event: ThreeEvent<PointerEvent>) {
+  function handleConnectorPointerDown(
+    connector: WallConnectorRef,
+    event: ThreeEvent<PointerEvent>,
+  ) {
     if (viewMode !== "blockout") return;
-    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary) return;
+    if (event.button !== 0 || event.altKey || !event.nativeEvent.isPrimary)
+      return;
 
     event.stopPropagation();
-    const projection = projectPointerToConnectorPlane(connector, event.clientX, event.clientY);
+    const projection = projectPointerToConnectorPlane(
+      connector,
+      event.clientX,
+      event.clientY,
+    );
     if (!projection) return;
 
     if (tool === "add-door") {
       const newDoor = createDoor(roomRef.current, connector.wall);
       newDoor.connector = connector;
-      newDoor.width = Math.min(newDoor.width, projection.descriptor.length * 0.9);
-      newDoor.offset = clampConnectorOffset(projection.descriptor, projection.offsetAlong, newDoor.width);
+      newDoor.width = Math.min(
+        newDoor.width,
+        projection.descriptor.length * 0.9,
+      );
+      newDoor.offset = clampConnectorOffset(
+        projection.descriptor,
+        projection.offsetAlong,
+        newDoor.width,
+      );
       onDoorsChangeRef.current([...doorsRef.current, newDoor]);
       onSelect({ type: "door", id: newDoor.id });
       onToolChange("select");
@@ -2329,8 +2938,15 @@ function SceneContent({
     if (tool === "add-window") {
       const newWindow = createWindowOpening(roomRef.current, connector.wall);
       newWindow.connector = connector;
-      newWindow.width = Math.min(newWindow.width, projection.descriptor.length * 0.9);
-      newWindow.offset = clampConnectorOffset(projection.descriptor, projection.offsetAlong, newWindow.width);
+      newWindow.width = Math.min(
+        newWindow.width,
+        projection.descriptor.length * 0.9,
+      );
+      newWindow.offset = clampConnectorOffset(
+        projection.descriptor,
+        projection.offsetAlong,
+        newWindow.width,
+      );
       newWindow.baseY = clampWindowVerticalOffset(
         roomRef.current,
         projection.y - newWindow.height / 2,
@@ -2342,7 +2958,11 @@ function SceneContent({
       return;
     }
 
-    onSelect({ type: "wall-segment", wall: connector.wall, id: connector.segmentId });
+    onSelect({
+      type: "wall-segment",
+      wall: connector.wall,
+      id: connector.segmentId,
+    });
     if (tool !== "select" && tool !== "move") return;
 
     if (!projection.descriptor.hasNeighbor) {
@@ -2363,9 +2983,18 @@ function SceneContent({
     startFraction: number,
     event: ThreeEvent<PointerEvent>,
   ) {
-    const descriptor = connectorDescriptor(roomRef.current, wallSegmentsRef.current, connector);
+    const descriptor = connectorDescriptor(
+      roomRef.current,
+      wallSegmentsRef.current,
+      connector,
+    );
     if (!descriptor) return;
-    const screenAxis = screenAxisForConnectorBoundary(connector.wall, descriptor.position, camera, gl.domElement);
+    const screenAxis = screenAxisForConnectorBoundary(
+      connector.wall,
+      descriptor.position,
+      camera,
+      gl.domElement,
+    );
     const controls = orbitControlsRef.current;
     connectorDragRef.current = {
       connector,
@@ -2397,7 +3026,12 @@ function SceneContent({
     event: ThreeEvent<PointerEvent>,
   ) {
     const wallCenter = wallPosition(roomRef.current, wall);
-    const screenAxis = screenPerpAxisForWall(wall, wallCenter, camera, gl.domElement);
+    const screenAxis = screenPerpAxisForWall(
+      wall,
+      wallCenter,
+      camera,
+      gl.domElement,
+    );
     const controls = orbitControlsRef.current;
     segmentDragRef.current = {
       segmentId,
@@ -2427,8 +3061,17 @@ function SceneContent({
       <ViewportCamera />
       <color attach="background" args={[SCENE_COLORS.background]} />
       <ambientLight intensity={0.5} />
-      <directionalLight castShadow position={[4, 7, 5]} intensity={1.4} shadow-mapSize={[2048, 2048]} />
-      <pointLight position={[-4, 3, -3]} intensity={2.2} color={SCENE_COLORS.warmLight} />
+      <directionalLight
+        castShadow
+        position={[4, 7, 5]}
+        intensity={1.4}
+        shadow-mapSize={[2048, 2048]}
+      />
+      <pointLight
+        position={[-4, 3, -3]}
+        intensity={2.2}
+        color={SCENE_COLORS.warmLight}
+      />
       <OrbitControls
         ref={orbitControlsRef}
         makeDefault
@@ -2463,13 +3106,17 @@ function SceneContent({
           onReferenceSelect={() => onSelect(null)}
           onWallPointerDown={handleWallPointerDown}
           onWallPointerOver={setHoveredWall}
-          onWallPointerOut={(wall) => setHoveredWall((current) => (current === wall ? null : current))}
+          onWallPointerOut={(wall) =>
+            setHoveredWall((current) => (current === wall ? null : current))
+          }
           onFloorPointerDown={handleFloorPointerDown}
           onSegmentPointerDown={handleSegmentPointerDown}
           onConnectorPointerDown={handleConnectorPointerDown}
         />
         {instances.map((instance) => {
-          const asset = assetById?.get(instance.assetId) ?? assets.find((item) => item.id === instance.assetId);
+          const asset =
+            assetById?.get(instance.assetId) ??
+            assets.find((item) => item.id === instance.assetId);
           const resizeSize = furnitureResizeHandleSize(asset);
           return (
             <FurnitureNode
@@ -2478,16 +3125,44 @@ function SceneContent({
               asset={asset}
               room={room}
               wallSegments={wallSegments}
-              selected={viewMode === "blockout" && selected?.type === "furniture" && selected.id === instance.id}
-              hovered={viewMode === "blockout" && hovered?.type === "furniture" && hovered.id === instance.id}
+              selected={
+                viewMode === "blockout" &&
+                selected?.type === "furniture" &&
+                selected.id === instance.id
+              }
+              hovered={
+                viewMode === "blockout" &&
+                hovered?.type === "furniture" &&
+                hovered.id === instance.id
+              }
               tool={viewMode === "blockout" ? tool : "select"}
               opacity={blockoutOpacity}
-              onSelect={() => onSelect(viewMode === "blockout" ? { type: "furniture", id: instance.id } : null)}
-              onDragStart={(event) =>
-                handleObjectPointerDown({ type: "furniture", id: instance.id }, instance.position, event)
+              onSelect={() =>
+                onSelect(
+                  viewMode === "blockout"
+                    ? { type: "furniture", id: instance.id }
+                    : null,
+                )
               }
-              onRotateStart={(event) => handleInstanceRotatePointerDown(instance, event)}
-              onScaleStart={(axis, sign, event) => handleInstanceScalePointerDown(instance, resizeSize, axis, sign, event)}
+              onDragStart={(event) =>
+                handleObjectPointerDown(
+                  { type: "furniture", id: instance.id },
+                  instance.position,
+                  event,
+                )
+              }
+              onRotateStart={(event) =>
+                handleInstanceRotatePointerDown(instance, event)
+              }
+              onScaleStart={(axis, sign, event) =>
+                handleInstanceScalePointerDown(
+                  instance,
+                  resizeSize,
+                  axis,
+                  sign,
+                  event,
+                )
+              }
               onTransformActiveChange={handleTransformActiveChange}
               onChange={updateInstance}
               onMeasured={
@@ -2512,14 +3187,38 @@ function SceneContent({
             shape={shape}
             room={room}
             wallSegments={wallSegments}
-            selected={viewMode === "blockout" && selected?.type === "shape" && selected.id === shape.id}
-            hovered={viewMode === "blockout" && hovered?.type === "shape" && hovered.id === shape.id}
+            selected={
+              viewMode === "blockout" &&
+              selected?.type === "shape" &&
+              selected.id === shape.id
+            }
+            hovered={
+              viewMode === "blockout" &&
+              hovered?.type === "shape" &&
+              hovered.id === shape.id
+            }
             tool={viewMode === "blockout" ? tool : "select"}
             opacity={blockoutOpacity}
-            onSelect={() => onSelect(viewMode === "blockout" ? { type: "shape", id: shape.id } : null)}
-            onDragStart={(event) => handleObjectPointerDown({ type: "shape", id: shape.id }, shape.position, event)}
-            onResizeStart={(axis, sign, event) => handleShapeResizePointerDown(shape, axis, sign, event)}
-            onRotateStart={(event) => handleShapeRotatePointerDown(shape, event)}
+            onSelect={() =>
+              onSelect(
+                viewMode === "blockout"
+                  ? { type: "shape", id: shape.id }
+                  : null,
+              )
+            }
+            onDragStart={(event) =>
+              handleObjectPointerDown(
+                { type: "shape", id: shape.id },
+                shape.position,
+                event,
+              )
+            }
+            onResizeStart={(axis, sign, event) =>
+              handleShapeResizePointerDown(shape, axis, sign, event)
+            }
+            onRotateStart={(event) =>
+              handleShapeRotatePointerDown(shape, event)
+            }
           />
         ))}
         {cameras.map((sceneCamera) => (
@@ -2527,12 +3226,32 @@ function SceneContent({
             key={sceneCamera.id}
             camera={sceneCamera}
             room={room}
-            selected={viewMode === "blockout" && selected?.type === "camera" && selected.id === sceneCamera.id}
-            hovered={viewMode === "blockout" && hovered?.type === "camera" && hovered.id === sceneCamera.id}
+            selected={
+              viewMode === "blockout" &&
+              selected?.type === "camera" &&
+              selected.id === sceneCamera.id
+            }
+            hovered={
+              viewMode === "blockout" &&
+              hovered?.type === "camera" &&
+              hovered.id === sceneCamera.id
+            }
             tool={viewMode === "blockout" ? tool : "select"}
             opacity={blockoutOpacity}
-            onSelect={() => onSelect(viewMode === "blockout" ? { type: "camera", id: sceneCamera.id } : null)}
-            onDragStart={(event) => handleObjectPointerDown({ type: "camera", id: sceneCamera.id }, sceneCamera.position, event)}
+            onSelect={() =>
+              onSelect(
+                viewMode === "blockout"
+                  ? { type: "camera", id: sceneCamera.id }
+                  : null,
+              )
+            }
+            onDragStart={(event) =>
+              handleObjectPointerDown(
+                { type: "camera", id: sceneCamera.id },
+                sceneCamera.position,
+                event,
+              )
+            }
             onTransformActiveChange={handleTransformActiveChange}
             onChange={updateCamera}
           />
@@ -2543,11 +3262,23 @@ function SceneContent({
             door={door}
             room={room}
             wallSegments={wallSegments}
-            selected={viewMode === "blockout" && selected?.type === "door" && selected.id === door.id}
-            hovered={viewMode === "blockout" && hovered?.type === "door" && hovered.id === door.id}
+            selected={
+              viewMode === "blockout" &&
+              selected?.type === "door" &&
+              selected.id === door.id
+            }
+            hovered={
+              viewMode === "blockout" &&
+              hovered?.type === "door" &&
+              hovered.id === door.id
+            }
             opacity={blockoutOpacity}
-            onPointerDown={(event) => handleOpeningPointerDown("door", door, event)}
-            onResizePointerDown={(event) => handleOpeningPointerDown("door", door, event, "scale")}
+            onPointerDown={(event) =>
+              handleOpeningPointerDown("door", door, event)
+            }
+            onResizePointerDown={(event) =>
+              handleOpeningPointerDown("door", door, event, "scale")
+            }
             onPointerOver={() => {}}
             onPointerOut={() => {}}
           />
@@ -2558,19 +3289,43 @@ function SceneContent({
             window={window}
             room={room}
             wallSegments={wallSegments}
-            selected={viewMode === "blockout" && selected?.type === "window" && selected.id === window.id}
-            hovered={viewMode === "blockout" && hovered?.type === "window" && hovered.id === window.id}
+            selected={
+              viewMode === "blockout" &&
+              selected?.type === "window" &&
+              selected.id === window.id
+            }
+            hovered={
+              viewMode === "blockout" &&
+              hovered?.type === "window" &&
+              hovered.id === window.id
+            }
             opacity={blockoutOpacity}
-            onPointerDown={(event) => handleOpeningPointerDown("window", window, event)}
-            onResizePointerDown={(event) => handleOpeningPointerDown("window", window, event, "scale")}
+            onPointerDown={(event) =>
+              handleOpeningPointerDown("window", window, event)
+            }
+            onResizePointerDown={(event) =>
+              handleOpeningPointerDown("window", window, event, "scale")
+            }
             onPointerOver={() => {}}
             onPointerOut={() => {}}
           />
         ))}
       </group>
       {viewMode === "blockout" ? (
-        <Html position={[floorBounds(room, wallSegments).minX, 0.04, floorBounds(room, wallSegments).maxZ + 0.22]} center zIndexRange={[0, 0]}>
-          <RoomDimensionBadge room={room} wallSegments={wallSegments} onRoomChange={onRoomChange} />
+        <Html
+          position={[
+            floorBounds(room, wallSegments).minX,
+            0.04,
+            floorBounds(room, wallSegments).maxZ + 0.22,
+          ]}
+          center
+          zIndexRange={[0, 0]}
+        >
+          <RoomDimensionBadge
+            room={room}
+            wallSegments={wallSegments}
+            onRoomChange={onRoomChange}
+          />
         </Html>
       ) : null}
     </>
@@ -2605,8 +3360,15 @@ function BlockoutReferenceLayer({
   onWallPointerOver: (wall: WallId) => void;
   onWallPointerOut: (wall: WallId) => void;
   onFloorPointerDown: (event: ThreeEvent<PointerEvent>) => void;
-  onSegmentPointerDown: (wall: WallId, segment: WallSegment, event: ThreeEvent<PointerEvent>) => void;
-  onConnectorPointerDown: (connector: WallConnectorRef, event: ThreeEvent<PointerEvent>) => void;
+  onSegmentPointerDown: (
+    wall: WallId,
+    segment: WallSegment,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
+  onConnectorPointerDown: (
+    connector: WallConnectorRef,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
 }) {
   const gridCellColor = fadeSceneColor(SCENE_COLORS.gridCell, opacity);
   const gridSectionColor = fadeSceneColor(SCENE_COLORS.gridSection, opacity);
@@ -2677,8 +3439,15 @@ type SegmentedWallProps = {
   onWallPointerDown: (wall: WallId, event: ThreeEvent<PointerEvent>) => void;
   onWallPointerOver: (wall: WallId) => void;
   onWallPointerOut: (wall: WallId) => void;
-  onSegmentPointerDown: (wall: WallId, segment: WallSegment, event: ThreeEvent<PointerEvent>) => void;
-  onConnectorPointerDown: (connector: WallConnectorRef, event: ThreeEvent<PointerEvent>) => void;
+  onSegmentPointerDown: (
+    wall: WallId,
+    segment: WallSegment,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
+  onConnectorPointerDown: (
+    connector: WallConnectorRef,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
 };
 
 function SegmentedWall({
@@ -2697,8 +3466,10 @@ function SegmentedWall({
   onSegmentPointerDown,
   onConnectorPointerDown,
 }: SegmentedWallProps) {
-  const wallSelected = editable && selected?.type === "wall" && selected.id === wall;
-  const wallHovered = editable && hovered?.type === "wall" && hovered.id === wall;
+  const wallSelected =
+    editable && selected?.type === "wall" && selected.id === wall;
+  const wallHovered =
+    editable && hovered?.type === "wall" && hovered.id === wall;
   const wallLength = wallAxisLength(room, wall);
   const isHorizontal = wall === "north" || wall === "south";
   const center = wallPosition(room, wall);
@@ -2707,7 +3478,12 @@ function SegmentedWall({
   return (
     <group>
       {segments.map((segment) => {
-        const endpoints = segmentWorldEndpoints(room, wallSegments, wall, segment);
+        const endpoints = segmentWorldEndpoints(
+          room,
+          wallSegments,
+          wall,
+          segment,
+        );
         const segmentLength = endpoints.length;
         const rawStart = isHorizontal
           ? room.minX + segment.start * wallLength
@@ -2727,10 +3503,15 @@ function SegmentedWall({
           ? [hitCenter - visibleCenter, 0, 0]
           : [0, 0, hitCenter - visibleCenter];
         const segmentSelected =
-          editable && selected?.type === "wall-segment" && selected.id === segment.id;
+          editable &&
+          selected?.type === "wall-segment" &&
+          selected.id === segment.id;
         const segmentHovered =
-          editable && hovered?.type === "wall-segment" && hovered.id === segment.id;
-        const cursorActive = editable && (tool === "cut-wall" || segmentSelected);
+          editable &&
+          hovered?.type === "wall-segment" &&
+          hovered.id === segment.id;
+        const cursorActive =
+          editable && (tool === "cut-wall" || segmentSelected);
         return (
           <SegmentMesh
             key={segment.id}
@@ -2747,7 +3528,11 @@ function SegmentedWall({
             onPointerDown={
               editable
                 ? (event) => {
-                    if (segments.length === 1 && segment.displacement === 0 && tool !== "cut-wall") {
+                    if (
+                      segments.length === 1 &&
+                      segment.displacement === 0 &&
+                      tool !== "cut-wall"
+                    ) {
                       onWallPointerDown(wall, event);
                       return;
                     }
@@ -2768,8 +3553,16 @@ function SegmentedWall({
         const midDisp = (segment.displacement + next.displacement) / 2;
         const perp = sign * midDisp;
         const position: Vec3 = isHorizontal
-          ? [(room.minX + room.maxX) / 2 + cutAlong, room.height / 2, center[2] + perp]
-          : [center[0] + perp, room.height / 2, (room.minZ + room.maxZ) / 2 + cutAlong];
+          ? [
+              (room.minX + room.maxX) / 2 + cutAlong,
+              room.height / 2,
+              center[2] + perp,
+            ]
+          : [
+              center[0] + perp,
+              room.height / 2,
+              (room.minZ + room.maxZ) / 2 + cutAlong,
+            ];
         return (
           <ConnectorMesh
             key={`${segment.id}-${next.id}-connector`}
@@ -2781,7 +3574,11 @@ function SegmentedWall({
             highlight={wallSelected || wallHovered}
             onPointerDown={
               editable
-                ? (event) => onConnectorPointerDown({ wall, segmentId: segment.id, side: "end" }, event)
+                ? (event) =>
+                    onConnectorPointerDown(
+                      { wall, segmentId: segment.id, side: "end" },
+                      event,
+                    )
                 : undefined
             }
           />
@@ -2807,29 +3604,85 @@ function segmentWorldEndpoints(
 
   if (wall === "north") {
     return {
-      start: segment.start <= 0.001 ? room.minX + westNorthDisplacement(segmentation) : room.minX + segment.start * width,
-      end: segment.end >= 0.999 ? room.maxX - eastNorthDisplacement(segmentation) : room.minX + segment.end * width,
-      length: Math.max(0, (segment.end >= 0.999 ? room.maxX - eastNorthDisplacement(segmentation) : room.minX + segment.end * width) - (segment.start <= 0.001 ? room.minX + westNorthDisplacement(segmentation) : room.minX + segment.start * width)),
+      start:
+        segment.start <= 0.001
+          ? room.minX + westNorthDisplacement(segmentation)
+          : room.minX + segment.start * width,
+      end:
+        segment.end >= 0.999
+          ? room.maxX - eastNorthDisplacement(segmentation)
+          : room.minX + segment.end * width,
+      length: Math.max(
+        0,
+        (segment.end >= 0.999
+          ? room.maxX - eastNorthDisplacement(segmentation)
+          : room.minX + segment.end * width) -
+          (segment.start <= 0.001
+            ? room.minX + westNorthDisplacement(segmentation)
+            : room.minX + segment.start * width),
+      ),
     };
   }
   if (wall === "south") {
     return {
-      start: segment.start <= 0.001 ? room.minX + westSouthDisplacement(segmentation) : room.minX + segment.start * width,
-      end: segment.end >= 0.999 ? room.maxX - eastSouthDisplacement(segmentation) : room.minX + segment.end * width,
-      length: Math.max(0, (segment.end >= 0.999 ? room.maxX - eastSouthDisplacement(segmentation) : room.minX + segment.end * width) - (segment.start <= 0.001 ? room.minX + westSouthDisplacement(segmentation) : room.minX + segment.start * width)),
+      start:
+        segment.start <= 0.001
+          ? room.minX + westSouthDisplacement(segmentation)
+          : room.minX + segment.start * width,
+      end:
+        segment.end >= 0.999
+          ? room.maxX - eastSouthDisplacement(segmentation)
+          : room.minX + segment.end * width,
+      length: Math.max(
+        0,
+        (segment.end >= 0.999
+          ? room.maxX - eastSouthDisplacement(segmentation)
+          : room.minX + segment.end * width) -
+          (segment.start <= 0.001
+            ? room.minX + westSouthDisplacement(segmentation)
+            : room.minX + segment.start * width),
+      ),
     };
   }
   if (wall === "east") {
     return {
-      start: segment.start <= 0.001 ? room.minZ + southEastDisplacement(segmentation) : room.minZ + segment.start * depth,
-      end: segment.end >= 0.999 ? room.maxZ - northEastDisplacement(segmentation) : room.minZ + segment.end * depth,
-      length: Math.max(0, (segment.end >= 0.999 ? room.maxZ - northEastDisplacement(segmentation) : room.minZ + segment.end * depth) - (segment.start <= 0.001 ? room.minZ + southEastDisplacement(segmentation) : room.minZ + segment.start * depth)),
+      start:
+        segment.start <= 0.001
+          ? room.minZ + southEastDisplacement(segmentation)
+          : room.minZ + segment.start * depth,
+      end:
+        segment.end >= 0.999
+          ? room.maxZ - northEastDisplacement(segmentation)
+          : room.minZ + segment.end * depth,
+      length: Math.max(
+        0,
+        (segment.end >= 0.999
+          ? room.maxZ - northEastDisplacement(segmentation)
+          : room.minZ + segment.end * depth) -
+          (segment.start <= 0.001
+            ? room.minZ + southEastDisplacement(segmentation)
+            : room.minZ + segment.start * depth),
+      ),
     };
   }
   return {
-    start: segment.start <= 0.001 ? room.minZ + southWestDisplacement(segmentation) : room.minZ + segment.start * depth,
-    end: segment.end >= 0.999 ? room.maxZ - northWestDisplacement(segmentation) : room.minZ + segment.end * depth,
-    length: Math.max(0, (segment.end >= 0.999 ? room.maxZ - northWestDisplacement(segmentation) : room.minZ + segment.end * depth) - (segment.start <= 0.001 ? room.minZ + southWestDisplacement(segmentation) : room.minZ + segment.start * depth)),
+    start:
+      segment.start <= 0.001
+        ? room.minZ + southWestDisplacement(segmentation)
+        : room.minZ + segment.start * depth,
+    end:
+      segment.end >= 0.999
+        ? room.maxZ - northWestDisplacement(segmentation)
+        : room.minZ + segment.end * depth,
+    length: Math.max(
+      0,
+      (segment.end >= 0.999
+        ? room.maxZ - northWestDisplacement(segmentation)
+        : room.minZ + segment.end * depth) -
+        (segment.start <= 0.001
+          ? room.minZ + southWestDisplacement(segmentation)
+          : room.minZ + segment.start * depth),
+    ),
   };
 }
 
@@ -2981,7 +3834,10 @@ function floorBounds(room: RoomBounds, wallSegments: WallSegmentation) {
 }
 
 function fadeSceneColor(color: string, opacity: number) {
-  return new THREE.Color(color).lerp(new THREE.Color(SCENE_COLORS.background), 1 - THREE.MathUtils.clamp(opacity, 0, 1));
+  return new THREE.Color(color).lerp(
+    new THREE.Color(SCENE_COLORS.background),
+    1 - THREE.MathUtils.clamp(opacity, 0, 1),
+  );
 }
 
 function shapeLocalPointerValue(
@@ -3000,13 +3856,25 @@ function shapeLocalPointerValue(
     point[1] - shape.position[1],
     point[2] - shape.position[2],
   );
-  const inverseRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(...shape.rotation)).invert();
+  const inverseRotation = new THREE.Quaternion()
+    .setFromEuler(new THREE.Euler(...shape.rotation))
+    .invert();
   localPoint.applyQuaternion(inverseRotation);
   return axis === 0 ? localPoint.x : localPoint.z;
 }
 
-function shapePointerAngle(shape: CustomShape, clientX: number, clientY: number, projectPointerToFloor: Projector) {
-  return pointerAngleAroundPosition(shape.position, clientX, clientY, projectPointerToFloor);
+function shapePointerAngle(
+  shape: CustomShape,
+  clientX: number,
+  clientY: number,
+  projectPointerToFloor: Projector,
+) {
+  return pointerAngleAroundPosition(
+    shape.position,
+    clientX,
+    clientY,
+    projectPointerToFloor,
+  );
 }
 
 /** Angle (radians) from `position` to the projected pointer on the floor plane. */
@@ -3022,11 +3890,24 @@ function pointerAngleAroundPosition(
 }
 
 function shortestAngleDelta(nextAngle: number, startAngle: number) {
-  return Math.atan2(Math.sin(nextAngle - startAngle), Math.cos(nextAngle - startAngle));
+  return Math.atan2(
+    Math.sin(nextAngle - startAngle),
+    Math.cos(nextAngle - startAngle),
+  );
 }
 
-function WorldAxisGuides({ room, opacity }: { room: RoomBounds; opacity: number }) {
-  const axisLength = Math.max(10000, room.maxX - room.minX, room.maxZ - room.minZ);
+function WorldAxisGuides({
+  room,
+  opacity,
+}: {
+  room: RoomBounds;
+  opacity: number;
+}) {
+  const axisLength = Math.max(
+    10000,
+    room.maxX - room.minX,
+    room.maxZ - room.minZ,
+  );
   const xStart = -axisLength;
   const xEnd = axisLength;
   const zStart = -axisLength;
@@ -3035,9 +3916,24 @@ function WorldAxisGuides({ room, opacity }: { room: RoomBounds; opacity: number 
 
   return (
     <group userData={{ captureHidden: true }}>
-      <AxisGuideLine start={[xStart, 0.035, 0]} end={[xEnd, 0.035, 0]} color={SCENE_COLORS.axisX} opacity={lineOpacity} />
-      <AxisGuideLine start={[0, 0.035, zStart]} end={[0, 0.035, zEnd]} color={SCENE_COLORS.axisZ} opacity={lineOpacity} />
-      <AxisGuideLine start={[0, -axisLength, 0]} end={[0, axisLength, 0]} color={SCENE_COLORS.axisY} opacity={lineOpacity} />
+      <AxisGuideLine
+        start={[xStart, 0.035, 0]}
+        end={[xEnd, 0.035, 0]}
+        color={SCENE_COLORS.axisX}
+        opacity={lineOpacity}
+      />
+      <AxisGuideLine
+        start={[0, 0.035, zStart]}
+        end={[0, 0.035, zEnd]}
+        color={SCENE_COLORS.axisZ}
+        opacity={lineOpacity}
+      />
+      <AxisGuideLine
+        start={[0, -axisLength, 0]}
+        end={[0, axisLength, 0]}
+        color={SCENE_COLORS.axisY}
+        opacity={lineOpacity}
+      />
     </group>
   );
 }
@@ -3055,8 +3951,16 @@ function AxisGuideLine({
 }) {
   const line = useMemo(() => {
     const nextGeometry = new THREE.BufferGeometry();
-    nextGeometry.setFromPoints([new THREE.Vector3(...start), new THREE.Vector3(...end)]);
-    const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+    nextGeometry.setFromPoints([
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...end),
+    ]);
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    });
     return new THREE.Line(nextGeometry, material);
   }, [color, end, opacity, start]);
 
@@ -3113,7 +4017,13 @@ function MarbleSplatScene({
     regionsRef.current = regions;
     selectedRef.current = selected;
     objectSplatModeRef.current = objectSplatMode;
-    if (splatRef.current) applySplatObjectEdits(splatRef.current, regions, selected, objectSplatMode);
+    if (splatRef.current)
+      applySplatObjectEdits(
+        splatRef.current,
+        regions,
+        selected,
+        objectSplatMode,
+      );
   }, [objectSplatMode, regions, selected]);
 
   useEffect(() => {
@@ -3126,7 +4036,12 @@ function MarbleSplatScene({
     // so no preliminary quaternion seeding here.
     applySplatAlignment(splat, alignmentRef.current);
     applySplatOpacity(splat, opacityRef.current);
-    applySplatObjectEdits(splat, regionsRef.current, selectedRef.current, objectSplatModeRef.current);
+    applySplatObjectEdits(
+      splat,
+      regionsRef.current,
+      selectedRef.current,
+      objectSplatModeRef.current,
+    );
     splatRef.current = splat;
     scene.add(splat);
 
@@ -3135,14 +4050,22 @@ function MarbleSplatScene({
         if (disposed) return;
         applySplatAlignment(mesh, alignmentRef.current);
         applySplatOpacity(mesh, opacityRef.current);
-        applySplatObjectEdits(mesh, regionsRef.current, selectedRef.current, objectSplatModeRef.current);
+        applySplatObjectEdits(
+          mesh,
+          regionsRef.current,
+          selectedRef.current,
+          objectSplatModeRef.current,
+        );
         onLoadStateChange({ status: "ready" });
       })
       .catch((error: unknown) => {
         if (disposed) return;
         onLoadStateChange({
           status: "error",
-          message: error instanceof Error ? error.message : "Unable to load the generated SPZ asset.",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to load the generated SPZ asset.",
         });
       });
 
@@ -3158,8 +4081,14 @@ function MarbleSplatScene({
 }
 
 function applySplatAlignment(mesh: SplatMesh, alignment: SplatAlignment) {
-  const rotationY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), alignment.rotationY);
-  const base = (alignment.flipX ?? true) ? SPARK_SPLAT_BASE_QUATERNION : SPLAT_IDENTITY_QUATERNION;
+  const rotationY = new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(0, 1, 0),
+    alignment.rotationY,
+  );
+  const base =
+    (alignment.flipX ?? true)
+      ? SPARK_SPLAT_BASE_QUATERNION
+      : SPLAT_IDENTITY_QUATERNION;
   mesh.position.set(...alignment.position);
   mesh.quaternion.copy(base).premultiply(rotationY);
   mesh.scale.setScalar(alignment.scale);
@@ -3177,7 +4106,9 @@ function applySplatObjectEdits(
   selected: SelectedRef,
   mode: ObjectSplatMode,
 ) {
-  const selectedRegion = selected ? regions.find((region) => selectedRefMatches(region.sourceRef, selected)) : undefined;
+  const selectedRegion = selected
+    ? regions.find((region) => selectedRefMatches(region.sourceRef, selected))
+    : undefined;
   if (mode === "off" || !selectedRegion) {
     mesh.edits = null;
     mesh.updateGenerator();
@@ -3186,26 +4117,61 @@ function applySplatObjectEdits(
 
   const edits: SplatEdit[] = [];
   if (mode === "highlight") {
-    edits.push(createSplatRegionEdit(selectedRegion, SplatEditRgbaBlendMode.SET_RGB, OBJECT_SPLAT_ACCENT, 0.92));
+    edits.push(
+      createSplatRegionEdit(
+        selectedRegion,
+        SplatEditRgbaBlendMode.SET_RGB,
+        OBJECT_SPLAT_ACCENT,
+        0.92,
+      ),
+    );
   }
 
   if (mode === "hide") {
-    edits.push(createSplatRegionEdit(selectedRegion, SplatEditRgbaBlendMode.MULTIPLY, "#FFFFFF", 0));
+    edits.push(
+      createSplatRegionEdit(
+        selectedRegion,
+        SplatEditRgbaBlendMode.MULTIPLY,
+        "#FFFFFF",
+        0,
+      ),
+    );
   }
 
   if (mode === "fade") {
     for (const region of regions) {
       if (!selectedRefMatches(region.sourceRef, selectedRegion.sourceRef)) {
-        edits.push(createSplatRegionEdit(region, SplatEditRgbaBlendMode.MULTIPLY, "#FFFFFF", 0.32));
+        edits.push(
+          createSplatRegionEdit(
+            region,
+            SplatEditRgbaBlendMode.MULTIPLY,
+            "#FFFFFF",
+            0.32,
+          ),
+        );
       }
     }
-    edits.push(createSplatRegionEdit(selectedRegion, SplatEditRgbaBlendMode.SET_RGB, OBJECT_SPLAT_ACCENT, 0.96));
+    edits.push(
+      createSplatRegionEdit(
+        selectedRegion,
+        SplatEditRgbaBlendMode.SET_RGB,
+        OBJECT_SPLAT_ACCENT,
+        0.96,
+      ),
+    );
   }
 
   if (mode === "isolate") {
     for (const region of regions) {
       if (!selectedRefMatches(region.sourceRef, selectedRegion.sourceRef)) {
-        edits.push(createSplatRegionEdit(region, SplatEditRgbaBlendMode.MULTIPLY, "#FFFFFF", 0.14));
+        edits.push(
+          createSplatRegionEdit(
+            region,
+            SplatEditRgbaBlendMode.MULTIPLY,
+            "#FFFFFF",
+            0.14,
+          ),
+        );
       }
     }
   }
@@ -3220,7 +4186,11 @@ function createSplatRegionEdit(
   color: string,
   opacity: number,
 ) {
-  const edit = new SplatEdit({ rgbaBlendMode, softEdge: 0.08, sdfSmooth: 0.04 });
+  const edit = new SplatEdit({
+    rgbaBlendMode,
+    softEdge: 0.08,
+    sdfSmooth: 0.04,
+  });
   const sdf = new SplatEditSdf({
     type: splatSdfType(region.shape),
     color: new THREE.Color(color),
@@ -3292,6 +4262,8 @@ function FirstPersonController({ active }: { active: boolean }) {
   const forwardRef = useRef(new THREE.Vector3());
   const rightRef = useRef(new THREE.Vector3());
   const moveRef = useRef(new THREE.Vector3());
+  const velocityRef = useRef(new THREE.Vector3());
+  const desiredVelocityRef = useRef(new THREE.Vector3());
   const eulerRef = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
 
   useEffect(() => {
@@ -3301,12 +4273,21 @@ function FirstPersonController({ active }: { active: boolean }) {
   // Spawn at origin and reset look angles whenever we (re-)enter splat mode.
   useEffect(() => {
     const keys = keysRef.current;
+    const velocity = velocityRef.current;
 
     if (!active) {
       resetWalkKeys(keys);
+      velocity.set(0, 0, 0);
       draggingRef.current = false;
       return;
     }
+
+    // Play mode should immediately hand controls to movement keys, not a
+    // previously focused text field (style prompt, search box, etc.).
+    const activeElement = document.activeElement as HTMLElement | null;
+    activeElement?.blur();
+    gl.domElement.setAttribute("tabindex", "0");
+    gl.domElement.focus({ preventScroll: true });
 
     yawRef.current = 0;
     pitchRef.current = 0;
@@ -3317,8 +4298,9 @@ function FirstPersonController({ active }: { active: boolean }) {
 
     return () => {
       resetWalkKeys(keys);
+      velocity.set(0, 0, 0);
     };
-  }, [active]);
+  }, [active, gl.domElement]);
 
   // Drag-to-look on the canvas (no pointer lock — cursor stays visible).
   useEffect(() => {
@@ -3326,7 +4308,8 @@ function FirstPersonController({ active }: { active: boolean }) {
     const element = gl.domElement;
 
     function handlePointerDown(event: PointerEvent) {
-      if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey)
+        return;
       draggingRef.current = true;
       dragPointerIdRef.current = event.pointerId;
       lastPointerRef.current = { x: event.clientX, y: event.clientY };
@@ -3339,7 +4322,8 @@ function FirstPersonController({ active }: { active: boolean }) {
     }
 
     function handlePointerMove(event: PointerEvent) {
-      if (!draggingRef.current || event.pointerId !== dragPointerIdRef.current) return;
+      if (!draggingRef.current || event.pointerId !== dragPointerIdRef.current)
+        return;
       const dx = event.clientX - lastPointerRef.current.x;
       const dy = event.clientY - lastPointerRef.current.y;
       lastPointerRef.current = { x: event.clientX, y: event.clientY };
@@ -3349,7 +4333,12 @@ function FirstPersonController({ active }: { active: boolean }) {
         -SPLAT_PITCH_LIMIT,
         SPLAT_PITCH_LIMIT,
       );
-      applyLook(cameraRef.current, yawRef.current, pitchRef.current, eulerRef.current);
+      applyLook(
+        cameraRef.current,
+        yawRef.current,
+        pitchRef.current,
+        eulerRef.current,
+      );
     }
 
     function endDrag(event: PointerEvent) {
@@ -3376,33 +4365,35 @@ function FirstPersonController({ active }: { active: boolean }) {
     };
   }, [active, gl.domElement]);
 
-  // WASD (works without pointer lock).
+  // WASD — capture-phase listeners on both window and document so keys
+  // are intercepted even when another element (or an XR overlay) has focus.
   useEffect(() => {
     if (!active) return;
     const keys = keysRef.current;
+    const element = gl.domElement;
 
     function applyKey(event: KeyboardEvent, pressed: boolean) {
       // Don't hijack typing inside text inputs (style prompt, etc.).
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
         return;
       }
-      const handled =
-        event.code === "KeyW" ||
-        event.code === "KeyA" ||
-        event.code === "KeyS" ||
-        event.code === "KeyD" ||
-        event.code === "ShiftLeft" ||
-        event.code === "ShiftRight";
+      const key = walkKeyFromEvent(event);
+      const handled = key !== null;
 
       if (!handled) return;
       event.preventDefault();
 
-      if (event.code === "KeyW") keys.forward = pressed;
-      if (event.code === "KeyS") keys.backward = pressed;
-      if (event.code === "KeyA") keys.left = pressed;
-      if (event.code === "KeyD") keys.right = pressed;
-      if (event.code === "ShiftLeft" || event.code === "ShiftRight") keys.fast = pressed;
+      if (key === "forward") keys.forward = pressed;
+      if (key === "backward") keys.backward = pressed;
+      if (key === "left") keys.left = pressed;
+      if (key === "right") keys.right = pressed;
+      if (key === "fast") keys.fast = pressed;
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -3417,50 +4408,98 @@ function FirstPersonController({ active }: { active: boolean }) {
       resetWalkKeys(keys);
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    // Re-focus the canvas whenever the user clicks it so keyboard events
+    // keep routing here after any overlay interaction.
+    function ensureFocus() {
+      element.focus({ preventScroll: true });
+    }
+
+    // Use capture phase so we intercept before any overlay or XR handler.
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    window.addEventListener("keyup", handleKeyUp, { capture: true });
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    document.addEventListener("keyup", handleKeyUp, { capture: true });
     window.addEventListener("blur", handleBlur);
+    element.addEventListener("pointerdown", ensureFocus, { capture: true });
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
+      window.removeEventListener("keyup", handleKeyUp, { capture: true });
+      document.removeEventListener("keydown", handleKeyDown, { capture: true });
+      document.removeEventListener("keyup", handleKeyUp, { capture: true });
       window.removeEventListener("blur", handleBlur);
+      element.removeEventListener("pointerdown", ensureFocus, { capture: true });
     };
-  }, [active]);
+  }, [active, gl.domElement]);
 
   useFrame((_, delta) => {
     if (!active) return;
+    const frameDelta = Math.min(delta, WALK_MAX_FRAME_DELTA);
     const cam = cameraRef.current;
     const keys = keysRef.current;
     const forwardAmount = Number(keys.forward) - Number(keys.backward);
     const rightAmount = Number(keys.right) - Number(keys.left);
-    if (forwardAmount === 0 && rightAmount === 0) return;
 
     const forward = forwardRef.current;
     const right = rightRef.current;
     const move = moveRef.current;
+    const velocity = velocityRef.current;
+    const desiredVelocity = desiredVelocityRef.current;
+
     cam.getWorldDirection(forward);
     forward.y = 0;
-    if (forward.lengthSq() < 1e-6) return;
+    // Fallback to -Z if the camera is pointing straight up/down.
+    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
     forward.normalize();
-    right.setFromMatrixColumn(cam.matrix, 0);
+    // Use matrixWorld (world-space) so the right vector is correct after any
+    // parent transform or OrbitControls update.
+    right.setFromMatrixColumn(cam.matrixWorld, 0);
     right.y = 0;
+    if (right.lengthSq() < 1e-6) right.set(1, 0, 0);
     right.normalize();
-    move.set(0, 0, 0).addScaledVector(forward, forwardAmount).addScaledVector(right, rightAmount);
-    if (move.lengthSq() === 0) return;
+    move
+      .set(0, 0, 0)
+      .addScaledVector(forward, forwardAmount)
+      .addScaledVector(right, rightAmount);
 
-    const distance = delta * WALK_SPEED * (keys.fast ? WALK_FAST_MULTIPLIER : 1);
-    move.normalize().multiplyScalar(distance);
-    cam.position.add(move);
-    cam.position.x = THREE.MathUtils.clamp(cam.position.x, -SPLAT_WALK_HALF_EXTENT, SPLAT_WALK_HALF_EXTENT);
-    cam.position.z = THREE.MathUtils.clamp(cam.position.z, -SPLAT_WALK_HALF_EXTENT, SPLAT_WALK_HALF_EXTENT);
+    if (move.lengthSq() > 0) {
+      desiredVelocity
+        .copy(move)
+        .normalize()
+        .multiplyScalar(WALK_SPEED * (keys.fast ? WALK_FAST_MULTIPLIER : 1));
+    } else {
+      desiredVelocity.set(0, 0, 0);
+    }
+
+    const blendRate =
+      desiredVelocity.lengthSq() > 0 ? WALK_ACCELERATION : WALK_DECELERATION;
+    const blendFactor = 1 - Math.exp(-blendRate * frameDelta);
+    velocity.lerp(desiredVelocity, blendFactor);
+    if (velocity.lengthSq() < 1e-5) velocity.set(0, 0, 0);
+
+    cam.position.addScaledVector(velocity, frameDelta);
+    cam.position.x = THREE.MathUtils.clamp(
+      cam.position.x,
+      -SPLAT_WALK_HALF_EXTENT,
+      SPLAT_WALK_HALF_EXTENT,
+    );
+    cam.position.z = THREE.MathUtils.clamp(
+      cam.position.z,
+      -SPLAT_WALK_HALF_EXTENT,
+      SPLAT_WALK_HALF_EXTENT,
+    );
     cam.position.y = WALK_EYE_HEIGHT;
   });
 
   return null;
 }
 
-function applyLook(camera: THREE.Camera, yaw: number, pitch: number, scratch: THREE.Euler) {
+function applyLook(
+  camera: THREE.Camera,
+  yaw: number,
+  pitch: number,
+  scratch: THREE.Euler,
+) {
   scratch.set(pitch, yaw, 0, "YXZ");
   camera.quaternion.setFromEuler(scratch);
 }
@@ -3497,15 +4536,102 @@ function applyLook(camera: THREE.Camera, yaw: number, pitch: number, scratch: TH
  * avoid attaching controller listeners we don't need.
  */
 function VrSplatRig({ active }: { active: boolean }) {
+  const { camera, gl } = useThree();
   const originRef = useRef<THREE.Group>(null);
+  const keysRef = useRef<WalkKeys>({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    fast: false,
+  });
+  const forwardRef = useRef(new THREE.Vector3());
+  const rightRef = useRef(new THREE.Vector3());
+  const moveRef = useRef(new THREE.Vector3());
+  const velocityRef = useRef(new THREE.Vector3());
+  const desiredVelocityRef = useRef(new THREE.Vector3());
 
   useEffect(() => {
     if (!active) return;
     const origin = originRef.current;
     if (!origin) return;
+    const velocity = velocityRef.current;
+    const element = gl.domElement;
     origin.position.set(0, 0, 0);
     origin.rotation.set(0, 0, 0);
-  }, [active]);
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    activeElement?.blur();
+    element.setAttribute("tabindex", "0");
+    element.focus({ preventScroll: true });
+
+    const keys = keysRef.current;
+    function applyKey(event: KeyboardEvent, pressed: boolean) {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const key = walkKeyFromEvent(event);
+      const handled = key !== null;
+      if (!handled) return;
+      event.preventDefault();
+      if (key === "forward") keys.forward = pressed;
+      if (key === "backward") keys.backward = pressed;
+      if (key === "left") keys.left = pressed;
+      if (key === "right") keys.right = pressed;
+      if (key === "fast") keys.fast = pressed;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      applyKey(event, true);
+    }
+
+    function handleKeyUp(event: KeyboardEvent) {
+      applyKey(event, false);
+    }
+
+    function handleBlur() {
+      resetWalkKeys(keys);
+      velocity.set(0, 0, 0);
+    }
+
+    function ensureFocus() {
+      element.focus({ preventScroll: true });
+    }
+
+    // In immersive XR, some browsers route keyboard events to document/canvas
+    // instead of window. Listen on both to keep WASD reliable.
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    window.addEventListener("keyup", handleKeyUp, { capture: true });
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    document.addEventListener("keyup", handleKeyUp, { capture: true });
+    window.addEventListener("blur", handleBlur);
+    element.addEventListener("pointerdown", ensureFocus, { capture: true });
+    element.addEventListener("touchstart", ensureFocus, { capture: true });
+
+    return () => {
+      resetWalkKeys(keys);
+      velocity.set(0, 0, 0);
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
+      window.removeEventListener("keyup", handleKeyUp, { capture: true });
+      document.removeEventListener("keydown", handleKeyDown, {
+        capture: true,
+      });
+      document.removeEventListener("keyup", handleKeyUp, { capture: true });
+      window.removeEventListener("blur", handleBlur);
+      element.removeEventListener("pointerdown", ensureFocus, {
+        capture: true,
+      });
+      element.removeEventListener("touchstart", ensureFocus, {
+        capture: true,
+      });
+    };
+  }, [active, gl.domElement]);
 
   useXRControllerLocomotion(
     originRef,
@@ -3514,12 +4640,65 @@ function VrSplatRig({ active }: { active: boolean }) {
     "left",
   );
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!active) return;
     const origin = originRef.current;
     if (!origin) return;
-    origin.position.x = THREE.MathUtils.clamp(origin.position.x, -SPLAT_WALK_HALF_EXTENT, SPLAT_WALK_HALF_EXTENT);
-    origin.position.z = THREE.MathUtils.clamp(origin.position.z, -SPLAT_WALK_HALF_EXTENT, SPLAT_WALK_HALF_EXTENT);
+
+    const frameDelta = Math.min(delta, WALK_MAX_FRAME_DELTA);
+    const keys = keysRef.current;
+    const forwardAmount = Number(keys.forward) - Number(keys.backward);
+    const rightAmount = Number(keys.right) - Number(keys.left);
+
+    const forward = forwardRef.current;
+    const right = rightRef.current;
+    const move = moveRef.current;
+    const velocity = velocityRef.current;
+    const desiredVelocity = desiredVelocityRef.current;
+
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    // In desktop XR emulation the camera may not have a valid world direction
+    // yet (the XR frame hasn't set a head pose). Fall back to -Z so WASD is
+    // always usable regardless of whether a real headset is connected.
+    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+    forward.normalize();
+    right.setFromMatrixColumn(camera.matrixWorld, 0);
+    right.y = 0;
+    if (right.lengthSq() < 1e-6) right.set(1, 0, 0);
+    right.normalize();
+
+    move
+      .set(0, 0, 0)
+      .addScaledVector(forward, forwardAmount)
+      .addScaledVector(right, rightAmount);
+
+    if (move.lengthSq() > 0) {
+      desiredVelocity
+        .copy(move)
+        .normalize()
+        .multiplyScalar(WALK_SPEED * (keys.fast ? WALK_FAST_MULTIPLIER : 1));
+    } else {
+      desiredVelocity.set(0, 0, 0);
+    }
+
+    const blendRate =
+      desiredVelocity.lengthSq() > 0 ? WALK_ACCELERATION : WALK_DECELERATION;
+    const blendFactor = 1 - Math.exp(-blendRate * frameDelta);
+    velocity.lerp(desiredVelocity, blendFactor);
+    if (velocity.lengthSq() < 1e-5) velocity.set(0, 0, 0);
+    origin.position.addScaledVector(velocity, frameDelta);
+
+    origin.position.x = THREE.MathUtils.clamp(
+      origin.position.x,
+      -SPLAT_WALK_HALF_EXTENT,
+      SPLAT_WALK_HALF_EXTENT,
+    );
+    origin.position.z = THREE.MathUtils.clamp(
+      origin.position.z,
+      -SPLAT_WALK_HALF_EXTENT,
+      SPLAT_WALK_HALF_EXTENT,
+    );
     origin.position.y = 0;
   });
 
@@ -3535,16 +4714,41 @@ function resetWalkKeys(keys: WalkKeys) {
   keys.fast = false;
 }
 
+function walkKeyFromEvent(
+  event: KeyboardEvent,
+): "forward" | "backward" | "left" | "right" | "fast" | null {
+  const code = event.code;
+  const key = event.key.toLowerCase();
+
+  if (code === "KeyW" || code === "ArrowUp" || key === "w") return "forward";
+  if (code === "KeyS" || code === "ArrowDown" || key === "s") return "backward";
+  if (code === "KeyA" || code === "ArrowLeft" || key === "a") return "left";
+  if (code === "KeyD" || code === "ArrowRight" || key === "d") return "right";
+  if (code === "ShiftLeft" || code === "ShiftRight" || key === "shift")
+    return "fast";
+
+  return null;
+}
+
 function clampCameraPosition(position: Vec3, room: RoomBounds): Vec3 {
   const floorClamped = clampToRoom(position, room, 0.2);
   return [
     floorClamped[0],
-    THREE.MathUtils.clamp(position[1], 0.25, Math.max(0.25, room.height - 0.15)),
+    THREE.MathUtils.clamp(
+      position[1],
+      0.25,
+      Math.max(0.25, room.height - 0.15),
+    ),
     floorClamped[2],
   ];
 }
 
-function screenAxisForWall(wall: WallId, wallCenter: Vec3, camera: THREE.Camera, element: HTMLCanvasElement) {
+function screenAxisForWall(
+  wall: WallId,
+  wallCenter: Vec3,
+  camera: THREE.Camera,
+  element: HTMLCanvasElement,
+) {
   const axisEnd: Vec3 =
     wall === "east" || wall === "west"
       ? [wallCenter[0] + 1, wallCenter[1], wallCenter[2]]
@@ -3598,7 +4802,11 @@ function screenAxisForLocalAxis(
   camera: THREE.Camera,
   element: HTMLCanvasElement,
 ) {
-  const axisVector = new THREE.Vector3(axis === 0 ? 1 : 0, axis === 1 ? 1 : 0, axis === 2 ? 1 : 0);
+  const axisVector = new THREE.Vector3(
+    axis === 0 ? 1 : 0,
+    axis === 1 ? 1 : 0,
+    axis === 2 ? 1 : 0,
+  );
   axisVector.applyEuler(new THREE.Euler(...rotation));
   const axisEnd: Vec3 = [
     position[0] + axisVector.x,
@@ -3612,7 +4820,11 @@ function screenAxisForLocalAxis(
   return { x, y, lengthSq: x * x + y * y };
 }
 
-function worldToClientPoint(position: Vec3, camera: THREE.Camera, element: HTMLCanvasElement) {
+function worldToClientPoint(
+  position: Vec3,
+  camera: THREE.Camera,
+  element: HTMLCanvasElement,
+) {
   const rect = element.getBoundingClientRect();
   const projected = new THREE.Vector3(...position).project(camera);
   return {
@@ -3624,7 +4836,9 @@ function worldToClientPoint(position: Vec3, camera: THREE.Camera, element: HTMLC
 function splatAlignmentFromMarble(marble: MarbleResult): SplatAlignment {
   // Pre-baked local splats have authored defaults — they don't follow Marble's
   // Y-down + 1m-unit convention.
-  const localOverride = marble.spzUrl ? LOCAL_SPLAT_DEFAULTS[marble.spzUrl] : undefined;
+  const localOverride = marble.spzUrl
+    ? LOCAL_SPLAT_DEFAULTS[marble.spzUrl]
+    : undefined;
   if (localOverride) return localOverride;
 
   const position = marble.payload?.metadata.capture?.camera?.position;
@@ -3643,11 +4857,21 @@ function captureLayoutPano(
 ): CaptureImage | undefined {
   try {
     const position = layoutPanoCameraPosition(room, wallSegments);
-    const primary = renderLayoutPano(scene, renderer, position, LAYOUT_PANO_WIDTH);
+    const primary = renderLayoutPano(
+      scene,
+      renderer,
+      position,
+      LAYOUT_PANO_WIDTH,
+    );
     const capture =
       dataUrlByteLength(primary.dataUrl) <= LAYOUT_PANO_MAX_DATA_URL_BYTES
         ? primary
-        : renderLayoutPano(scene, renderer, position, LAYOUT_PANO_FALLBACK_WIDTH);
+        : renderLayoutPano(
+            scene,
+            renderer,
+            position,
+            LAYOUT_PANO_FALLBACK_WIDTH,
+          );
 
     return {
       role: "layout-pano",
@@ -3669,7 +4893,10 @@ function renderLayoutPano(
   width: number,
 ): { dataUrl: string; width: number; height: number } {
   const height = width / 2;
-  const cubeSize = Math.min(1024, Math.max(512, THREE.MathUtils.ceilPowerOfTwo(width / 3)));
+  const cubeSize = Math.min(
+    1024,
+    Math.max(512, THREE.MathUtils.ceilPowerOfTwo(width / 3)),
+  );
   const restoreScene = prepareSceneForLayoutCapture(scene);
   const previousTarget = renderer.getRenderTarget();
   const previousXrEnabled = renderer.xr.enabled;
@@ -3716,7 +4943,10 @@ function prepareSceneForLayoutCapture(scene: THREE.Scene) {
 
   // Inject a strong ambient light so flat blockout faces are uniformly lit
   // (no harsh shadows that confuse Marble's spatial interpretation).
-  const captureLight = new THREE.AmbientLight("#ffffff", LAYOUT_CAPTURE.ambientIntensity);
+  const captureLight = new THREE.AmbientLight(
+    "#ffffff",
+    LAYOUT_CAPTURE.ambientIntensity,
+  );
   captureLight.userData.layoutCaptureLight = true;
   scene.add(captureLight);
   restores.push(() => {
@@ -3739,10 +4969,14 @@ function prepareSceneForLayoutCapture(scene: THREE.Scene) {
 
     if (!(object instanceof THREE.Mesh)) return;
     const captureRole = object.userData.captureRole as string | undefined;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
     materials.forEach((material) => {
       if (!material) return;
-      const maybeWireframe = material as THREE.Material & { wireframe?: boolean };
+      const maybeWireframe = material as THREE.Material & {
+        wireframe?: boolean;
+      };
       if (maybeWireframe.wireframe) {
         const previousVisible = object.visible;
         object.visible = false;
@@ -3766,19 +5000,26 @@ function prepareSceneForLayoutCapture(scene: THREE.Scene) {
       const overrideColor = captureColorForRole(captureRole);
       let restoreColor: (() => void) | undefined;
       if (overrideColor) {
-        const colored = material as THREE.Material & { color?: THREE.Color; emissive?: THREE.Color; emissiveIntensity?: number };
+        const colored = material as THREE.Material & {
+          color?: THREE.Color;
+          emissive?: THREE.Color;
+          emissiveIntensity?: number;
+        };
         const previousColor = colored.color?.clone();
         const previousEmissive = colored.emissive?.clone();
         const previousEmissiveIntensity = colored.emissiveIntensity;
         if (colored.color) colored.color.set(overrideColor);
         if (colored.emissive) {
           colored.emissive.set("#000000");
-          if (typeof colored.emissiveIntensity === "number") colored.emissiveIntensity = 0;
+          if (typeof colored.emissiveIntensity === "number")
+            colored.emissiveIntensity = 0;
         }
         restoreColor = () => {
           if (previousColor && colored.color) colored.color.copy(previousColor);
-          if (previousEmissive && colored.emissive) colored.emissive.copy(previousEmissive);
-          if (typeof previousEmissiveIntensity === "number") colored.emissiveIntensity = previousEmissiveIntensity;
+          if (previousEmissive && colored.emissive)
+            colored.emissive.copy(previousEmissive);
+          if (typeof previousEmissiveIntensity === "number")
+            colored.emissiveIntensity = previousEmissiveIntensity;
         };
       }
       material.needsUpdate = true;
@@ -3793,7 +5034,8 @@ function prepareSceneForLayoutCapture(scene: THREE.Scene) {
   });
 
   return () => {
-    for (let index = restores.length - 1; index >= 0; index -= 1) restores[index]();
+    for (let index = restores.length - 1; index >= 0; index -= 1)
+      restores[index]();
   };
 }
 
@@ -3816,15 +5058,32 @@ function captureColorForRole(role: string | undefined): string | undefined {
   }
 }
 
-function readCubeFaces(renderer: THREE.WebGLRenderer, target: THREE.WebGLCubeRenderTarget, size: number) {
+function readCubeFaces(
+  renderer: THREE.WebGLRenderer,
+  target: THREE.WebGLCubeRenderTarget,
+  size: number,
+) {
   return Array.from({ length: 6 }, (_, faceIndex) => {
     const pixels = new Uint8Array(size * size * 4);
-    renderer.readRenderTargetPixels(target, 0, 0, size, size, pixels, faceIndex);
+    renderer.readRenderTargetPixels(
+      target,
+      0,
+      0,
+      size,
+      size,
+      pixels,
+      faceIndex,
+    );
     return pixels;
   });
 }
 
-function cubeFacesToEquirectDataUrl(faces: Uint8Array[], cubeSize: number, width: number, height: number) {
+function cubeFacesToEquirectDataUrl(
+  faces: Uint8Array[],
+  cubeSize: number,
+  width: number,
+  height: number,
+) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -3842,7 +5101,11 @@ function cubeFacesToEquirectDataUrl(faces: Uint8Array[], cubeSize: number, width
     for (let x = 0; x < width; x += 1) {
       const u = (x + 0.5) / width;
       const theta = (u * 2 - 1) * Math.PI;
-      direction.set(Math.sin(theta) * cosPhi, Math.sin(phi), -Math.cos(theta) * cosPhi);
+      direction.set(
+        Math.sin(theta) * cosPhi,
+        Math.sin(phi),
+        -Math.cos(theta) * cosPhi,
+      );
       const sample = sampleCubeFace(faces, cubeSize, direction);
       const outputIndex = (y * width + x) * 4;
       output[outputIndex] = sample[0];
@@ -3856,7 +5119,11 @@ function cubeFacesToEquirectDataUrl(faces: Uint8Array[], cubeSize: number, width
   return canvas.toDataURL("image/png");
 }
 
-function sampleCubeFace(faces: Uint8Array[], size: number, direction: THREE.Vector3): [number, number, number] {
+function sampleCubeFace(
+  faces: Uint8Array[],
+  size: number,
+  direction: THREE.Vector3,
+): [number, number, number] {
   const absX = Math.abs(direction.x);
   const absY = Math.abs(direction.y);
   const absZ = Math.abs(direction.z);
@@ -3894,8 +5161,16 @@ function sampleCubeFace(faces: Uint8Array[], size: number, direction: THREE.Vect
     v = direction.y / absZ;
   }
 
-  const pixelX = THREE.MathUtils.clamp(Math.floor(((u + 1) / 2) * size), 0, size - 1);
-  const pixelY = THREE.MathUtils.clamp(Math.floor(((1 - v) / 2) * size), 0, size - 1);
+  const pixelX = THREE.MathUtils.clamp(
+    Math.floor(((u + 1) / 2) * size),
+    0,
+    size - 1,
+  );
+  const pixelY = THREE.MathUtils.clamp(
+    Math.floor(((1 - v) / 2) * size),
+    0,
+    size - 1,
+  );
   const index = ((size - 1 - pixelY) * size + pixelX) * 4;
   const pixels = faces[face];
   return [pixels[index], pixels[index + 1], pixels[index + 2]];
@@ -3907,9 +5182,16 @@ function sampleCubeFace(faces: Uint8Array[], size: number, direction: THREE.Vect
  * rectangular room this is identical to the geometric center; for L-shapes or
  * outcrop layouts the centroid stays inside the room.
  */
-function layoutPanoCameraPosition(room: RoomBounds, wallSegments: WallSegmentation): Vec3 {
+function layoutPanoCameraPosition(
+  room: RoomBounds,
+  wallSegments: WallSegmentation,
+): Vec3 {
   const polygon = buildFloorPolygon(room, wallSegments);
-  const eyeY = THREE.MathUtils.clamp(WALK_EYE_HEIGHT, 1.2, Math.max(1.2, room.height - 0.4));
+  const eyeY = THREE.MathUtils.clamp(
+    WALK_EYE_HEIGHT,
+    1.2,
+    Math.max(1.2, room.height - 0.4),
+  );
   if (polygon.length < 3) {
     return [(room.minX + room.maxX) / 2, eyeY, (room.minZ + room.maxZ) / 2];
   }
@@ -3917,7 +5199,10 @@ function layoutPanoCameraPosition(room: RoomBounds, wallSegments: WallSegmentati
   return [x, eyeY, z];
 }
 
-function polygonCentroid(points: Array<{ x: number; z: number }>): { x: number; z: number } {
+function polygonCentroid(points: Array<{ x: number; z: number }>): {
+  x: number;
+  z: number;
+} {
   let area = 0;
   let cx = 0;
   let cz = 0;
@@ -3970,16 +5255,34 @@ function dockedViewportIconFromRect(rect: DOMRect): DockedViewportIcon {
 }
 
 function dockedViewportIconStyle(dock: DockedViewportIcon) {
-  if (dock.edge === "left") return { left: "0.75rem", top: dock.offset, transform: "translateY(-50%)" };
-  if (dock.edge === "right") return { right: "0.75rem", top: dock.offset, transform: "translateY(-50%)" };
-  if (dock.edge === "top") return { left: dock.offset, top: "0.75rem", transform: "translateX(-50%)" };
-  return { left: dock.offset, bottom: "0.75rem", transform: "translateX(-50%)" };
+  if (dock.edge === "left")
+    return { left: "0.75rem", top: dock.offset, transform: "translateY(-50%)" };
+  if (dock.edge === "right")
+    return {
+      right: "0.75rem",
+      top: dock.offset,
+      transform: "translateY(-50%)",
+    };
+  if (dock.edge === "top")
+    return { left: dock.offset, top: "0.75rem", transform: "translateX(-50%)" };
+  return {
+    left: dock.offset,
+    bottom: "0.75rem",
+    transform: "translateX(-50%)",
+  };
 }
 
-function clampViewportPanelPosition(x: number, y: number, width: number, height: number) {
+function clampViewportPanelPosition(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
   const margin = 12;
-  const viewportWidth = typeof window === "undefined" ? 1280 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 800 : window.innerHeight;
+  const viewportWidth =
+    typeof window === "undefined" ? 1280 : window.innerWidth;
+  const viewportHeight =
+    typeof window === "undefined" ? 800 : window.innerHeight;
   const maxX = Math.max(margin, viewportWidth - width - margin);
   const maxY = Math.max(margin, viewportHeight - height - margin);
 
@@ -4008,7 +5311,10 @@ function DraggableViewportPanel({
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const [panelPosition, setPanelPosition] = useState<{ x: number; y: number } | null>(null);
+  const [panelPosition, setPanelPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [minimized, setMinimized] = useState<DockedViewportIcon | null>(null);
   const dragRef = useRef<{
     pointerId: number;
@@ -4062,12 +5368,16 @@ function DraggableViewportPanel({
         // Pointer capture can already be released by the browser.
       }
 
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
       window.removeEventListener("pointerup", endDrag, { capture: true });
       window.removeEventListener("pointercancel", endDrag, { capture: true });
     }
 
-    window.addEventListener("pointermove", handlePointerMove, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      capture: true,
+    });
     window.addEventListener("pointerup", endDrag, { capture: true });
     window.addEventListener("pointercancel", endDrag, { capture: true });
   }
@@ -4100,7 +5410,11 @@ function DraggableViewportPanel({
         "absolute rounded-md border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-overlay)_88%,transparent)] text-xs text-[var(--color-text-muted)] shadow-[var(--shadow-float)] [backdrop-filter:var(--panel-blur)]",
         className,
       )}
-      style={panelPosition ? { left: panelPosition.x, top: panelPosition.y } : defaultPlacement}
+      style={
+        panelPosition
+          ? { left: panelPosition.x, top: panelPosition.y }
+          : defaultPlacement
+      }
     >
       <div
         className="flex cursor-grab items-center justify-between gap-2 border-b border-[var(--color-border)] px-2 py-1.5 active:cursor-grabbing"
@@ -4110,7 +5424,10 @@ function DraggableViewportPanel({
           <Icon className="size-3.5 shrink-0 text-[var(--color-accent-hover)]" />
           <span className="truncate">{title}</span>
         </div>
-        <div className="flex items-center gap-1" onPointerDown={(event) => event.stopPropagation()}>
+        <div
+          className="flex items-center gap-1"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
           {action}
           <button
             type="button"
@@ -4166,23 +5483,51 @@ function SplatAlignmentControls({
       }
     >
       <div className="grid grid-cols-2 gap-1.5 p-2">
-        <NumberControl label="X" value={alignment.position[0]} step={0.1} onChange={(value) => updatePosition(0, value)} />
-        <NumberControl label="Y" value={alignment.position[1]} step={0.1} onChange={(value) => updatePosition(1, value)} />
-        <NumberControl label="Z" value={alignment.position[2]} step={0.1} onChange={(value) => updatePosition(2, value)} />
+        <NumberControl
+          label="X"
+          value={alignment.position[0]}
+          step={0.1}
+          onChange={(value) => updatePosition(0, value)}
+        />
+        <NumberControl
+          label="Y"
+          value={alignment.position[1]}
+          step={0.1}
+          onChange={(value) => updatePosition(1, value)}
+        />
+        <NumberControl
+          label="Z"
+          value={alignment.position[2]}
+          step={0.1}
+          onChange={(value) => updatePosition(2, value)}
+        />
         <NumberControl
           label="Rot Y"
           value={THREE.MathUtils.radToDeg(alignment.rotationY)}
           step={1}
-          onChange={(value) => onAlignmentChange({ ...alignment, rotationY: THREE.MathUtils.degToRad(value) })}
+          onChange={(value) =>
+            onAlignmentChange({
+              ...alignment,
+              rotationY: THREE.MathUtils.degToRad(value),
+            })
+          }
         />
-        <NumberControl label="Scale" value={alignment.scale} step={0.05} min={0.01} onChange={updateScale} />
+        <NumberControl
+          label="Scale"
+          value={alignment.scale}
+          step={0.05}
+          min={0.01}
+          onChange={updateScale}
+        />
         <label className="col-span-2 flex items-center justify-between gap-2 rounded-sm border border-[var(--color-border)] bg-[var(--color-inset)] px-1.5 py-1 text-[10px] font-medium uppercase text-[var(--color-text-muted)]">
           <span>Flip X (Y-up fix)</span>
           <input
             type="checkbox"
             className="h-3.5 w-3.5"
             checked={alignment.flipX ?? true}
-            onChange={(event) => onAlignmentChange({ ...alignment, flipX: event.target.checked })}
+            onChange={(event) =>
+              onAlignmentChange({ ...alignment, flipX: event.target.checked })
+            }
           />
         </label>
       </div>
@@ -4205,7 +5550,9 @@ function NumberControl({
 }) {
   return (
     <label className="flex items-center gap-1 rounded-sm border border-[var(--color-border)] bg-[var(--color-inset)] px-1.5 py-1">
-      <span className="w-9 shrink-0 text-[10px] font-medium uppercase text-[var(--color-text-muted)]">{label}</span>
+      <span className="w-9 shrink-0 text-[10px] font-medium uppercase text-[var(--color-text-muted)]">
+        {label}
+      </span>
       <input
         type="number"
         className="min-w-0 flex-1 bg-transparent text-right text-[11px] text-[var(--color-text-primary)] outline-none"
@@ -4240,15 +5587,14 @@ function useXrPresentingExternal() {
 }
 
 /**
- * Container for the bottom WASD hint and the Enter VR button. The WASD/drag
- * hint is meaningless once the user is in a headset (their hands aren't on
- * the keyboard) so we hide it during a VR session and show a controller
- * hint instead.
+ * Container for the bottom WASD hint and the Enter VR button. During an XR
+ * session both the WASD hint (keyboard still works in desktop/emulated XR)
+ * and the controller hint are shown so users know all available inputs.
  */
 function SplatOverlayControls() {
   const xrPresenting = useXrPresentingExternal();
   return xrPresenting ? (
-    <SplatVrHint />
+    <SplatXrHint />
   ) : (
     <>
       <EnterVrButton />
@@ -4268,6 +5614,27 @@ function SplatVrHint() {
     </div>
   );
 }
+
+/** Combined hint shown during an XR session: WASD (desktop/emulator) + controller sticks (headset). */
+function SplatXrHint() {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit max-w-[90%] rounded-md border border-[var(--border-mid)] bg-[color-mix(in_srgb,#16181d_88%,transparent)] px-3 py-1.5 text-[11px] text-[var(--text-secondary)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] [backdrop-filter:blur(6px)]">
+      <span className="font-mono text-[var(--text-bright)]">WASD</span>
+      <span className="mx-2 opacity-60">·</span>
+      <span>drag to look</span>
+      <span className="mx-2 opacity-60">·</span>
+      <span className="font-mono text-[var(--text-bright)]">Shift</span>
+      <span className="ml-1">sprint</span>
+      <span className="mx-2 opacity-40">|</span>
+      <span className="font-mono text-[var(--text-bright)]">L stick</span>
+      <span className="ml-1">walk</span>
+      <span className="mx-2 opacity-60">·</span>
+      <span className="font-mono text-[var(--text-bright)]">R stick</span>
+      <span className="ml-1">snap-turn</span>
+    </div>
+  );
+}
+
 
 function SplatWalkHint() {
   return (
@@ -4337,18 +5704,8 @@ function EnterVrButton() {
 
   // While `supported` is null we're still probing isSessionSupported(); show
   // nothing so the button doesn't pop in/out. If the probe finished and
-  // there's no XR device, show a small hint instead of the button so first-
-  // time users know how to get a headset connected (Quest Link / SteamVR).
-  if (supported === null) return null;
-  if (!supported) {
-    return (
-      <div className="pointer-events-none absolute right-3 top-3 flex max-w-[220px] flex-col items-end gap-1 text-right">
-        <div className="pointer-events-none rounded-md border border-[var(--border-dim)] bg-[color-mix(in_srgb,#16181d_88%,transparent)] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)] shadow-[0_4px_12px_rgba(0,0,0,0.35)] [backdrop-filter:blur(6px)]">
-          VR ready · connect Quest Link
-        </div>
-      </div>
-    );
-  }
+  // there's no XR device, return null silently — no hint badge needed.
+  if (supported === null || !supported) return null;
 
   return (
     <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-1">
@@ -4373,22 +5730,41 @@ function EnterVrButton() {
   );
 }
 
-function SplatViewportOverlay({ marble, loadState }: { marble: MarbleResult; loadState: SplatLoadState }) {
+function SplatViewportOverlay({
+  marble,
+  loadState,
+}: {
+  marble: MarbleResult;
+  loadState: SplatLoadState;
+}) {
   if (loadState.status === "error") {
     return (
       <div className="pointer-events-none absolute inset-x-4 bottom-4 mx-auto max-w-md rounded-md border border-[var(--color-warning)] bg-[color-mix(in_srgb,var(--color-overlay)_90%,transparent)] p-3 text-sm text-[var(--color-text-primary)] shadow-[var(--shadow-float)] [backdrop-filter:var(--panel-blur)]">
-        <div className="font-semibold text-[var(--color-warning)]">Generated splat could not load</div>
+        <div className="font-semibold text-[var(--color-warning)]">
+          Generated splat could not load
+        </div>
         <p className="mt-1 text-pretty text-xs text-[var(--color-text-muted)]">
-          {loadState.message ?? "Use the result panel thumbnail or asset links while the SPZ asset is unavailable."}
+          {loadState.message ??
+            "Use the result panel thumbnail or asset links while the SPZ asset is unavailable."}
         </p>
         <div className="pointer-events-auto mt-2 flex flex-wrap gap-2 text-xs">
           {marble.thumbnailUrl ? (
-            <a className="rounded-sm border border-[var(--color-border)] px-2 py-1 text-[var(--color-text-primary)] hover:bg-[var(--color-inset)]" href={marble.thumbnailUrl} target="_blank" rel="noreferrer">
+            <a
+              className="rounded-sm border border-[var(--color-border)] px-2 py-1 text-[var(--color-text-primary)] hover:bg-[var(--color-inset)]"
+              href={marble.thumbnailUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
               Thumbnail
             </a>
           ) : null}
           {marble.spzUrl ? (
-            <a className="rounded-sm border border-[var(--color-border)] px-2 py-1 text-[var(--color-text-primary)] hover:bg-[var(--color-inset)]" href={marble.spzUrl} target="_blank" rel="noreferrer">
+            <a
+              className="rounded-sm border border-[var(--color-border)] px-2 py-1 text-[var(--color-text-primary)] hover:bg-[var(--color-inset)]"
+              href={marble.spzUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
               SPZ asset
             </a>
           ) : null}
@@ -4400,7 +5776,9 @@ function SplatViewportOverlay({ marble, loadState }: { marble: MarbleResult; loa
   return (
     <div className="pointer-events-none absolute inset-x-4 bottom-4 mx-auto max-w-sm rounded-md border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-overlay)_88%,transparent)] p-3 text-center text-sm text-[var(--color-text-primary)] shadow-[var(--shadow-float)] [backdrop-filter:var(--panel-blur)]">
       <div className="font-semibold">Loading generated room</div>
-      <p className="mt-1 text-pretty text-xs text-[var(--color-text-muted)]">Streaming the generated splat asset into the viewport.</p>
+      <p className="mt-1 text-pretty text-xs text-[var(--color-text-muted)]">
+        Streaming the generated splat asset into the viewport.
+      </p>
     </div>
   );
 }
@@ -4467,7 +5845,11 @@ const MAX_OUTWARD_DISPLACEMENT = 6;
 const MAX_INWARD_DISPLACEMENT_FACTOR = 0.7;
 const MIN_CONNECTOR_OPENING_LENGTH = 0.45;
 
-function clampDisplacement(value: number, room: RoomBounds, wall: WallId): number {
+function clampDisplacement(
+  value: number,
+  room: RoomBounds,
+  wall: WallId,
+): number {
   const inwardLimit =
     wall === "east" || wall === "west"
       ? (room.maxX - room.minX) * MAX_INWARD_DISPLACEMENT_FACTOR
@@ -4499,14 +5881,13 @@ function connectorDescriptor(
   if (index === -1) return null;
 
   const segment = segments[index];
-  const neighbor = ref.side === "start" ? segments[index - 1] : segments[index + 1];
+  const neighbor =
+    ref.side === "start" ? segments[index - 1] : segments[index + 1];
   if (!neighbor && segment.displacement >= -0.001) return null;
-  const fromDisplacement = ref.side === "start"
-    ? neighbor?.displacement ?? 0
-    : segment.displacement;
-  const toDisplacement = ref.side === "start"
-    ? segment.displacement
-    : neighbor?.displacement ?? 0;
+  const fromDisplacement =
+    ref.side === "start" ? (neighbor?.displacement ?? 0) : segment.displacement;
+  const toDisplacement =
+    ref.side === "start" ? segment.displacement : (neighbor?.displacement ?? 0);
   const delta = toDisplacement - fromDisplacement;
   if (Math.abs(delta) < 0.001) return null;
 
@@ -4556,12 +5937,25 @@ function connectorDescriptor(
   };
 }
 
-function clampConnectorOffset(descriptor: WallConnectorDescriptor, offset: number, width: number) {
+function clampConnectorOffset(
+  descriptor: WallConnectorDescriptor,
+  offset: number,
+  width: number,
+) {
   const half = width / 2;
-  return Math.min(descriptor.length / 2 - half, Math.max(-descriptor.length / 2 + half, offset));
+  return Math.min(
+    descriptor.length / 2 - half,
+    Math.max(-descriptor.length / 2 + half, offset),
+  );
 }
 
-function clampSegmentOffset(room: RoomBounds, wall: WallId, segment: WallSegment, offset: number, width: number) {
+function clampSegmentOffset(
+  room: RoomBounds,
+  wall: WallId,
+  segment: WallSegment,
+  offset: number,
+  width: number,
+) {
   const length = wallAxisLength(room, wall);
   const min = (segment.start - 0.5) * length + width / 2;
   const max = (segment.end - 0.5) * length - width / 2;
@@ -4594,7 +5988,14 @@ function clampOpeningWidthOnWallRun(
 ) {
   const bounds = openingWallRunBounds(room, segmentation, wall, currentOffset);
   if (!bounds) return clampOpeningWidth(room, wall, currentOffset, width);
-  const maxWidth = Math.max(0.25, 2 * Math.min(currentOffset - bounds.minOffset, bounds.maxOffset - currentOffset));
+  const maxWidth = Math.max(
+    0.25,
+    2 *
+      Math.min(
+        currentOffset - bounds.minOffset,
+        bounds.maxOffset - currentOffset,
+      ),
+  );
   return Math.min(maxWidth, Math.max(0.25, width));
 }
 
@@ -4606,11 +6007,15 @@ function openingWallRunBounds(
 ) {
   const segments = segmentation[wall];
   if (!segments.length) return null;
-  const center = wall === "north" || wall === "south"
-    ? (room.minX + room.maxX) / 2
-    : (room.minZ + room.maxZ) / 2;
+  const center =
+    wall === "north" || wall === "south"
+      ? (room.minX + room.maxX) / 2
+      : (room.minZ + room.maxZ) / 2;
   const currentFraction = offsetToFraction(room, wall, currentOffset);
-  const index = segments.findIndex((segment) => currentFraction >= segment.start && currentFraction <= segment.end);
+  const index = segments.findIndex(
+    (segment) =>
+      currentFraction >= segment.start && currentFraction <= segment.end,
+  );
   if (index === -1) return null;
 
   const base = segments[index];
@@ -4618,17 +6023,29 @@ function openingWallRunBounds(
   let endIndex = index;
 
   for (let scan = index - 1; scan >= 0; scan -= 1) {
-    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001) break;
+    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001)
+      break;
     startIndex = scan;
   }
 
   for (let scan = index + 1; scan < segments.length; scan += 1) {
-    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001) break;
+    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001)
+      break;
     endIndex = scan;
   }
 
-  const startEndpoints = segmentWorldEndpoints(room, segmentation, wall, segments[startIndex]);
-  const endEndpoints = segmentWorldEndpoints(room, segmentation, wall, segments[endIndex]);
+  const startEndpoints = segmentWorldEndpoints(
+    room,
+    segmentation,
+    wall,
+    segments[startIndex],
+  );
+  const endEndpoints = segmentWorldEndpoints(
+    room,
+    segmentation,
+    wall,
+    segments[endIndex],
+  );
   const minAlong = startEndpoints.start;
   const maxAlong = endEndpoints.end;
   return {
@@ -4637,13 +6054,22 @@ function openingWallRunBounds(
   };
 }
 
-function clampOpeningWidth(room: RoomBounds, wall: WallId, offset: number, width: number) {
+function clampOpeningWidth(
+  room: RoomBounds,
+  wall: WallId,
+  offset: number,
+  width: number,
+) {
   const length = wallAxisLength(room, wall);
   const maxWidth = Math.max(0.25, 2 * (length / 2 - Math.abs(offset)));
   return Math.min(maxWidth, Math.max(0.25, width));
 }
 
-function connectorOpeningPosition(descriptor: WallConnectorDescriptor, offset: number, y: number): Vec3 {
+function connectorOpeningPosition(
+  descriptor: WallConnectorDescriptor,
+  offset: number,
+  y: number,
+): Vec3 {
   const shifted = descriptor.midCoord + descriptor.directionSign * offset;
   return descriptor.axis === "z"
     ? [descriptor.position[0], y, shifted]
@@ -4665,7 +6091,10 @@ function setConnectorBoundaryFraction(
 
   if (ref.side === "start") {
     if (!previous) return segmentation;
-    const clamped = Math.min(segment.end - minGap, Math.max(previous.start + minGap, fraction));
+    const clamped = Math.min(
+      segment.end - minGap,
+      Math.max(previous.start + minGap, fraction),
+    );
     const updated = segments.map((item, itemIndex) => {
       if (itemIndex === index - 1) return { ...item, end: clamped };
       if (itemIndex === index) return { ...item, start: clamped };
@@ -4675,7 +6104,10 @@ function setConnectorBoundaryFraction(
   }
 
   if (!next) return segmentation;
-  const clamped = Math.min(next.end - minGap, Math.max(segment.start + minGap, fraction));
+  const clamped = Math.min(
+    next.end - minGap,
+    Math.max(segment.start + minGap, fraction),
+  );
   const updated = segments.map((item, itemIndex) => {
     if (itemIndex === index) return { ...item, end: clamped };
     if (itemIndex === index + 1) return { ...item, start: clamped };
@@ -4684,7 +6116,10 @@ function setConnectorBoundaryFraction(
   return { ...segmentation, [ref.wall]: updated };
 }
 
-function wallOrientation(wall: WallId): { rotationY: number; normalSign: number } {
+function wallOrientation(wall: WallId): {
+  rotationY: number;
+  normalSign: number;
+} {
   switch (wall) {
     case "north":
       return { rotationY: Math.PI, normalSign: -1 };
@@ -4717,7 +6152,12 @@ function openingWorldPos(
   segments?: WallSegment[],
 ): Vec3 {
   const center = wallPosition(room, wall);
-  const displacement = segmentDisplacementAtOffset(room, wall, segments, offset);
+  const displacement = segmentDisplacementAtOffset(
+    room,
+    wall,
+    segments,
+    offset,
+  );
   const sign = wallSurfaceSign(wall);
   if (wall === "north" || wall === "south") {
     const cx = (room.minX + room.maxX) / 2;
@@ -4740,16 +6180,38 @@ type DoorNodeProps = {
   onPointerOut: () => void;
 };
 
-function DoorNode({ door, room, wallSegments, selected, hovered, opacity, onPointerDown, onResizePointerDown, onPointerOver, onPointerOut }: DoorNodeProps) {
+function DoorNode({
+  door,
+  room,
+  wallSegments,
+  selected,
+  hovered,
+  opacity,
+  onPointerDown,
+  onResizePointerDown,
+  onPointerOver,
+  onPointerOut,
+}: DoorNodeProps) {
   const connector = door.connector
     ? connectorDescriptor(room, wallSegments, door.connector)
     : null;
-  const { rotationY } = connector ? { rotationY: connector.rotationY } : wallOrientation(door.wall);
+  const { rotationY } = connector
+    ? { rotationY: connector.rotationY }
+    : wallOrientation(door.wall);
   const position = connector
     ? connectorOpeningPosition(connector, door.offset, door.height / 2)
-    : openingWorldPos(room, door.wall, door.offset, door.height / 2, wallSegments[door.wall]);
+    : openingWorldPos(
+        room,
+        door.wall,
+        door.offset,
+        door.height / 2,
+        wallSegments[door.wall],
+      );
   const frameColor = fadeSceneColor(SCENE_COLORS.doorFrame, opacity);
-  const panelColor = fadeSceneColor(selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.doorPanel, opacity);
+  const panelColor = fadeSceneColor(
+    selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.doorPanel,
+    opacity,
+  );
   const highlight = selected || hovered;
   const panelDepth = WALL_THICKNESS + 0.04;
   const frameDepth = WALL_THICKNESS + 0.06;
@@ -4781,7 +6243,11 @@ function DoorNode({ door, room, wallSegments, selected, hovered, opacity, onPoin
           depthWrite={panelOpaque || panelAlpha >= 0.98}
         />
       </mesh>
-      <mesh position={[-door.width / 2, 0, 0]} renderOrder={1} userData={{ captureRole: "door-frame" }}>
+      <mesh
+        position={[-door.width / 2, 0, 0]}
+        renderOrder={1}
+        userData={{ captureRole: "door-frame" }}
+      >
         <boxGeometry args={[0.06, door.height, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4790,7 +6256,11 @@ function DoorNode({ door, room, wallSegments, selected, hovered, opacity, onPoin
           depthWrite={frameOpaque}
         />
       </mesh>
-      <mesh position={[door.width / 2, 0, 0]} renderOrder={1} userData={{ captureRole: "door-frame" }}>
+      <mesh
+        position={[door.width / 2, 0, 0]}
+        renderOrder={1}
+        userData={{ captureRole: "door-frame" }}
+      >
         <boxGeometry args={[0.06, door.height, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4799,7 +6269,11 @@ function DoorNode({ door, room, wallSegments, selected, hovered, opacity, onPoin
           depthWrite={frameOpaque}
         />
       </mesh>
-      <mesh position={[0, door.height / 2, 0]} renderOrder={1} userData={{ captureRole: "door-frame" }}>
+      <mesh
+        position={[0, door.height / 2, 0]}
+        renderOrder={1}
+        userData={{ captureRole: "door-frame" }}
+      >
         <boxGeometry args={[door.width + 0.12, 0.06, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4852,17 +6326,39 @@ type WindowNodeProps = {
   onPointerOut: () => void;
 };
 
-function WindowNode({ window, room, wallSegments, selected, hovered, opacity, onPointerDown, onResizePointerDown, onPointerOver, onPointerOut }: WindowNodeProps) {
+function WindowNode({
+  window,
+  room,
+  wallSegments,
+  selected,
+  hovered,
+  opacity,
+  onPointerDown,
+  onResizePointerDown,
+  onPointerOver,
+  onPointerOut,
+}: WindowNodeProps) {
   const connector = window.connector
     ? connectorDescriptor(room, wallSegments, window.connector)
     : null;
-  const { rotationY } = connector ? { rotationY: connector.rotationY } : wallOrientation(window.wall);
+  const { rotationY } = connector
+    ? { rotationY: connector.rotationY }
+    : wallOrientation(window.wall);
   const centerY = window.baseY + window.height / 2;
   const position = connector
     ? connectorOpeningPosition(connector, window.offset, centerY)
-    : openingWorldPos(room, window.wall, window.offset, centerY, wallSegments[window.wall]);
+    : openingWorldPos(
+        room,
+        window.wall,
+        window.offset,
+        centerY,
+        wallSegments[window.wall],
+      );
   const frameColor = fadeSceneColor(SCENE_COLORS.windowFrame, opacity);
-  const glassColor = fadeSceneColor(selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.windowGlass, opacity);
+  const glassColor = fadeSceneColor(
+    selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.windowGlass,
+    opacity,
+  );
   const highlight = selected || hovered;
   const glassDepth = WALL_THICKNESS - 0.02;
   const frameDepth = WALL_THICKNESS + 0.06;
@@ -4891,12 +6387,18 @@ function WindowNode({ window, room, wallSegments, selected, hovered, opacity, on
           metalness={0.1}
           transparent
           opacity={(selected ? 0.7 : hovered ? 0.6 : 0.5) * opacity}
-          emissive={highlight ? SCENE_COLORS.wallSelected : SCENE_COLORS.windowGlass}
+          emissive={
+            highlight ? SCENE_COLORS.wallSelected : SCENE_COLORS.windowGlass
+          }
           emissiveIntensity={selected ? 0.3 : 0.08}
           depthWrite={false}
         />
       </mesh>
-      <mesh position={[-window.width / 2 + frameThickness / 2, 0, 0]} renderOrder={2} userData={{ captureRole: "window-frame" }}>
+      <mesh
+        position={[-window.width / 2 + frameThickness / 2, 0, 0]}
+        renderOrder={2}
+        userData={{ captureRole: "window-frame" }}
+      >
         <boxGeometry args={[frameThickness, window.height, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4905,7 +6407,11 @@ function WindowNode({ window, room, wallSegments, selected, hovered, opacity, on
           depthWrite={frameOpaque}
         />
       </mesh>
-      <mesh position={[window.width / 2 - frameThickness / 2, 0, 0]} renderOrder={2} userData={{ captureRole: "window-frame" }}>
+      <mesh
+        position={[window.width / 2 - frameThickness / 2, 0, 0]}
+        renderOrder={2}
+        userData={{ captureRole: "window-frame" }}
+      >
         <boxGeometry args={[frameThickness, window.height, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4914,7 +6420,11 @@ function WindowNode({ window, room, wallSegments, selected, hovered, opacity, on
           depthWrite={frameOpaque}
         />
       </mesh>
-      <mesh position={[0, window.height / 2 - frameThickness / 2, 0]} renderOrder={2} userData={{ captureRole: "window-frame" }}>
+      <mesh
+        position={[0, window.height / 2 - frameThickness / 2, 0]}
+        renderOrder={2}
+        userData={{ captureRole: "window-frame" }}
+      >
         <boxGeometry args={[innerWidth, frameThickness, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4923,7 +6433,11 @@ function WindowNode({ window, room, wallSegments, selected, hovered, opacity, on
           depthWrite={frameOpaque}
         />
       </mesh>
-      <mesh position={[0, -window.height / 2 + frameThickness / 2, 0]} renderOrder={2} userData={{ captureRole: "window-frame" }}>
+      <mesh
+        position={[0, -window.height / 2 + frameThickness / 2, 0]}
+        renderOrder={2}
+        userData={{ captureRole: "window-frame" }}
+      >
         <boxGeometry args={[innerWidth, frameThickness, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4932,7 +6446,11 @@ function WindowNode({ window, room, wallSegments, selected, hovered, opacity, on
           depthWrite={frameOpaque}
         />
       </mesh>
-      <mesh position={[0, 0, 0]} renderOrder={2} userData={{ captureRole: "window-frame" }}>
+      <mesh
+        position={[0, 0, 0]}
+        renderOrder={2}
+        userData={{ captureRole: "window-frame" }}
+      >
         <boxGeometry args={[0.04, innerHeight, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -4941,7 +6459,11 @@ function WindowNode({ window, room, wallSegments, selected, hovered, opacity, on
           depthWrite={mullionOpaque}
         />
       </mesh>
-      <mesh position={[0, 0, 0]} renderOrder={2} userData={{ captureRole: "window-frame" }}>
+      <mesh
+        position={[0, 0, 0]}
+        renderOrder={2}
+        userData={{ captureRole: "window-frame" }}
+      >
         <boxGeometry args={[innerWidth, 0.04, frameDepth]} />
         <meshStandardMaterial
           color={frameColor}
@@ -5048,7 +6570,11 @@ function SegmentMesh({
   const visibleSize: Vec3 = isHorizontal
     ? [length, height, WALL_THICKNESS]
     : [WALL_THICKNESS, height, length];
-  const outlineSize: Vec3 = [visibleSize[0] + 0.012, visibleSize[1] + 0.012, visibleSize[2] + 0.012];
+  const outlineSize: Vec3 = [
+    visibleSize[0] + 0.012,
+    visibleSize[1] + 0.012,
+    visibleSize[2] + 0.012,
+  ];
   const hitSize: Vec3 = isHorizontal
     ? [hitLength + 0.36, height, WALL_HIT_PAD]
     : [WALL_HIT_PAD, height, hitLength + 0.36];
@@ -5062,14 +6588,22 @@ function SegmentMesh({
     >
       {length >= 0.02 ? (
         <>
-          <mesh castShadow receiveShadow onPointerDown={onPointerDown} renderOrder={0} userData={{ captureRole: "wall" }}>
+          <mesh
+            castShadow
+            receiveShadow
+            onPointerDown={onPointerDown}
+            renderOrder={0}
+            userData={{ captureRole: "wall" }}
+          >
             <boxGeometry args={visibleSize} />
             <meshStandardMaterial
               color={selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.wall}
               transparent
               opacity={(selected ? 0.92 : hovered ? 0.84 : 0.74) * opacity}
               roughness={0.62}
-              emissive={highlighted ? SCENE_COLORS.wallSelected : SCENE_COLORS.wall}
+              emissive={
+                highlighted ? SCENE_COLORS.wallSelected : SCENE_COLORS.wall
+              }
               emissiveIntensity={selected ? 0.2 : hovered ? 0.1 : 0.05}
               depthWrite={opacity >= 0.98}
             />
@@ -5078,7 +6612,11 @@ function SegmentMesh({
             <boxGeometry args={outlineSize} />
             <meshBasicMaterial
               userData={{ captureHidden: true }}
-              color={highlighted ? SCENE_COLORS.wallSelectedEdge : SCENE_COLORS.wallEdge}
+              color={
+                highlighted
+                  ? SCENE_COLORS.wallSelectedEdge
+                  : SCENE_COLORS.wallEdge
+              }
               wireframe
               transparent
               opacity={(selected ? 0.65 : hovered ? 0.5 : 0.34) * opacity}
@@ -5110,20 +6648,37 @@ type ConnectorMeshProps = {
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void;
 };
 
-function ConnectorMesh({ wall, depth, height, position, opacity, highlight, onPointerDown }: ConnectorMeshProps) {
+function ConnectorMesh({
+  wall,
+  depth,
+  height,
+  position,
+  opacity,
+  highlight,
+  onPointerDown,
+}: ConnectorMeshProps) {
   const isHorizontal = wall === "north" || wall === "south";
   const visibleDepth = Math.max(0.02, depth - WALL_THICKNESS);
   const visibleSize: Vec3 = isHorizontal
     ? [WALL_THICKNESS, height, visibleDepth]
     : [visibleDepth, height, WALL_THICKNESS];
-  const outlineSize: Vec3 = [visibleSize[0] + 0.012, visibleSize[1] + 0.012, visibleSize[2] + 0.012];
+  const outlineSize: Vec3 = [
+    visibleSize[0] + 0.012,
+    visibleSize[1] + 0.012,
+    visibleSize[2] + 0.012,
+  ];
   const hitSize: Vec3 = isHorizontal
     ? [WALL_HIT_PAD, height, Math.max(depth, MIN_CONNECTOR_OPENING_LENGTH)]
     : [Math.max(depth, MIN_CONNECTOR_OPENING_LENGTH), height, WALL_HIT_PAD];
 
   return (
     <group position={position}>
-      <mesh castShadow receiveShadow onPointerDown={onPointerDown} userData={{ captureRole: "wall" }}>
+      <mesh
+        castShadow
+        receiveShadow
+        onPointerDown={onPointerDown}
+        userData={{ captureRole: "wall" }}
+      >
         <boxGeometry args={visibleSize} />
         <meshStandardMaterial
           color={highlight ? SCENE_COLORS.wallSelected : SCENE_COLORS.wall}
@@ -5139,7 +6694,9 @@ function ConnectorMesh({ wall, depth, height, position, opacity, highlight, onPo
         <boxGeometry args={outlineSize} />
         <meshBasicMaterial
           userData={{ captureHidden: true }}
-          color={highlight ? SCENE_COLORS.wallSelectedEdge : SCENE_COLORS.wallEdge}
+          color={
+            highlight ? SCENE_COLORS.wallSelectedEdge : SCENE_COLORS.wallEdge
+          }
           wireframe
           transparent
           opacity={0.34 * opacity}
@@ -5177,11 +6734,27 @@ function DragGhostNode({
     // Raise 3 mm above the floor so the ghost's transparent fragments don't
     // depth-fight with the opaque floor mesh at y=0.
     <group position={[snapped[0], snapped[1] + 0.003, snapped[2]]}>
-      <Suspense fallback={<PrimitiveFurniture primitive={asset.primitive} selected={false} hovered={false} opacity={0.45} />}>
+      <Suspense
+        fallback={
+          <PrimitiveFurniture
+            primitive={asset.primitive}
+            selected={false}
+            hovered={false}
+            opacity={0.45}
+          />
+        }
+      >
         {modelUrl ? (
           <GeneratedModelBoundary
             resetKey={modelUrl}
-            fallback={<PrimitiveFurniture primitive={asset.primitive} selected={false} hovered={false} opacity={0.45} />}
+            fallback={
+              <PrimitiveFurniture
+                primitive={asset.primitive}
+                selected={false}
+                hovered={false}
+                opacity={0.45}
+              />
+            }
           >
             <GeneratedModel
               url={modelUrl}
@@ -5192,7 +6765,12 @@ function DragGhostNode({
             />
           </GeneratedModelBoundary>
         ) : (
-          <PrimitiveFurniture primitive={asset.primitive} selected={false} hovered={false} opacity={0.45} />
+          <PrimitiveFurniture
+            primitive={asset.primitive}
+            selected={false}
+            hovered={false}
+            opacity={0.45}
+          />
         )}
       </Suspense>
       <GhostPlacementRing />
@@ -5203,13 +6781,24 @@ function DragGhostNode({
 function GhostPlacementRing() {
   const meshRef = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
-    const mat = (meshRef.current as THREE.Mesh | null)?.material as THREE.MeshBasicMaterial | undefined;
+    const mat = (meshRef.current as THREE.Mesh | null)?.material as
+      | THREE.MeshBasicMaterial
+      | undefined;
     if (mat) mat.opacity = 0.28 + 0.22 * Math.sin(clock.elapsedTime * 5);
   });
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
+    <mesh
+      ref={meshRef}
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0.005, 0]}
+    >
       <ringGeometry args={[0.38, 0.46, 48]} />
-      <meshBasicMaterial color="#3b8eff" transparent opacity={0.4} depthWrite={false} />
+      <meshBasicMaterial
+        color="#3b8eff"
+        transparent
+        opacity={0.4}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -5226,10 +6815,18 @@ type FurnitureNodeProps = {
   onSelect: () => void;
   onDragStart: (event: ThreeEvent<PointerEvent>) => void;
   onRotateStart: (event: ThreeEvent<PointerEvent>) => void;
-  onScaleStart: (axis: ShapeResizeAxis, sign: -1 | 1, event: ThreeEvent<PointerEvent>) => void;
+  onScaleStart: (
+    axis: ShapeResizeAxis,
+    sign: -1 | 1,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
   onTransformActiveChange: (active: boolean) => void;
   onChange: (instance: FurnitureInstance) => void;
-  onMeasured?: (footprint: { width: number; depth: number; height: number }) => void;
+  onMeasured?: (footprint: {
+    width: number;
+    depth: number;
+    height: number;
+  }) => void;
 };
 
 function FurnitureNode({
@@ -5250,14 +6847,21 @@ function FurnitureNode({
   onMeasured,
 }: FurnitureNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const transformMode = tool === "rotate" ? "rotate" : tool === "scale" ? "scale" : "translate";
-  const modelUrl = asset?.modelUrl ? proxiedModelUrl(asset.modelUrl) : undefined;
+  const transformMode =
+    tool === "rotate" ? "rotate" : tool === "scale" ? "scale" : "translate";
+  const modelUrl = asset?.modelUrl
+    ? proxiedModelUrl(asset.modelUrl)
+    : undefined;
   const resizeSize = furnitureResizeHandleSize(asset);
 
   useFrame(() => {
     if (!groupRef.current || !selected) return;
     const object = groupRef.current;
-    const nextPosition = clampToFloor([object.position.x, 0, object.position.z], room, wallSegments);
+    const nextPosition = clampToFloor(
+      [object.position.x, 0, object.position.z],
+      room,
+      wallSegments,
+    );
     if (
       nextPosition[0] !== object.position.x ||
       nextPosition[1] !== object.position.y ||
@@ -5270,7 +6874,11 @@ function FurnitureNode({
   function pushTransform() {
     const object = groupRef.current;
     if (!object) return;
-    const nextPosition = clampToFloor([object.position.x, 0, object.position.z], room, wallSegments);
+    const nextPosition = clampToFloor(
+      [object.position.x, 0, object.position.z],
+      room,
+      wallSegments,
+    );
     onChange({
       ...instance,
       position: [nextPosition[0], 0, nextPosition[2]],
@@ -5291,11 +6899,27 @@ function FurnitureNode({
         onDragStart(event);
       }}
     >
-      <Suspense fallback={<PrimitiveFurniture primitive={asset?.primitive ?? "sofa"} selected={selected} hovered={hovered} opacity={opacity} />}>
+      <Suspense
+        fallback={
+          <PrimitiveFurniture
+            primitive={asset?.primitive ?? "sofa"}
+            selected={selected}
+            hovered={hovered}
+            opacity={opacity}
+          />
+        }
+      >
         {modelUrl && asset ? (
           <GeneratedModelBoundary
             resetKey={modelUrl}
-            fallback={<GeneratedModelFallback primitive={asset.primitive} selected={selected} hovered={hovered} opacity={opacity} />}
+            fallback={
+              <GeneratedModelFallback
+                primitive={asset.primitive}
+                selected={selected}
+                hovered={hovered}
+                opacity={opacity}
+              />
+            }
           >
             <GeneratedModel
               url={modelUrl}
@@ -5307,15 +6931,41 @@ function FurnitureNode({
             />
           </GeneratedModelBoundary>
         ) : (
-          <PrimitiveFurniture primitive={asset?.primitive ?? "sofa"} selected={selected} hovered={hovered} opacity={opacity} />
+          <PrimitiveFurniture
+            primitive={asset?.primitive ?? "sofa"}
+            selected={selected}
+            hovered={hovered}
+            opacity={opacity}
+          />
         )}
       </Suspense>
-      {selected ? <FurnitureRotateRing size={resizeSize} scale={instance.scale} opacity={opacity} onRotateStart={onRotateStart} /> : null}
-      {selected ? <FurnitureScaleHandles size={resizeSize} scale={instance.scale} opacity={opacity} onScaleStart={onScaleStart} /> : null}
+      {selected ? (
+        <FurnitureRotateRing
+          size={resizeSize}
+          scale={instance.scale}
+          opacity={opacity}
+          onRotateStart={onRotateStart}
+        />
+      ) : null}
+      {selected ? (
+        <FurnitureScaleHandles
+          size={resizeSize}
+          scale={instance.scale}
+          opacity={opacity}
+          onScaleStart={onScaleStart}
+        />
+      ) : null}
     </group>
   );
 
-  if (!selected || tool === "select" || tool === "add-wall" || tool === "add-furniture" || tool === "add-shape") return content;
+  if (
+    !selected ||
+    tool === "select" ||
+    tool === "add-wall" ||
+    tool === "add-furniture" ||
+    tool === "add-shape"
+  )
+    return content;
 
   return (
     <TransformControls
@@ -5342,7 +6992,11 @@ type ShapeNodeProps = {
   opacity: number;
   onSelect: () => void;
   onDragStart: (event: ThreeEvent<PointerEvent>) => void;
-  onResizeStart: (axis: ShapeResizeAxis, sign: -1 | 1, event: ThreeEvent<PointerEvent>) => void;
+  onResizeStart: (
+    axis: ShapeResizeAxis,
+    sign: -1 | 1,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
   onRotateStart: (event: ThreeEvent<PointerEvent>) => void;
 };
 
@@ -5360,14 +7014,20 @@ function ShapeNode({
   onRotateStart,
 }: ShapeNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const showResizeHandles = selected && (tool === "select" || tool === "move" || tool === "scale");
-  const showRotateHandle = selected && (tool === "select" || tool === "move" || tool === "rotate");
+  const showResizeHandles =
+    selected && (tool === "select" || tool === "move" || tool === "scale");
+  const showRotateHandle =
+    selected && (tool === "select" || tool === "move" || tool === "rotate");
 
   useFrame(() => {
     if (!groupRef.current || !selected) return;
     const object = groupRef.current;
     const nextY = groundedShapeY(shape.kind, object.scale.y);
-    const nextPosition = clampToFloor([object.position.x, nextY, object.position.z], room, wallSegments);
+    const nextPosition = clampToFloor(
+      [object.position.x, nextY, object.position.z],
+      room,
+      wallSegments,
+    );
     if (
       nextPosition[0] !== object.position.x ||
       nextPosition[1] !== object.position.y ||
@@ -5389,9 +7049,26 @@ function ShapeNode({
         onDragStart(event);
       }}
     >
-      <ShapePrimitive shape={shape} selected={selected} hovered={hovered} opacity={opacity} />
-      {showResizeHandles ? <ShapeResizeHandles shape={shape} opacity={opacity} onResizeStart={onResizeStart} /> : null}
-      {showRotateHandle ? <ShapeRotateHandle shape={shape} opacity={opacity} onRotateStart={onRotateStart} /> : null}
+      <ShapePrimitive
+        shape={shape}
+        selected={selected}
+        hovered={hovered}
+        opacity={opacity}
+      />
+      {showResizeHandles ? (
+        <ShapeResizeHandles
+          shape={shape}
+          opacity={opacity}
+          onResizeStart={onResizeStart}
+        />
+      ) : null}
+      {showRotateHandle ? (
+        <ShapeRotateHandle
+          shape={shape}
+          opacity={opacity}
+          onRotateStart={onRotateStart}
+        />
+      ) : null}
     </group>
   );
 
@@ -5429,7 +7106,10 @@ function SceneCameraNode({
   useFrame(() => {
     if (!groupRef.current || !selected) return;
     const object = groupRef.current;
-    const nextPosition = clampCameraPosition([object.position.x, object.position.y, object.position.z], room);
+    const nextPosition = clampCameraPosition(
+      [object.position.x, object.position.y, object.position.z],
+      room,
+    );
     if (
       nextPosition[0] !== object.position.x ||
       nextPosition[1] !== object.position.y ||
@@ -5444,7 +7124,10 @@ function SceneCameraNode({
     if (!object) return;
     onChange({
       ...sceneCamera,
-      position: clampCameraPosition([object.position.x, object.position.y, object.position.z], room),
+      position: clampCameraPosition(
+        [object.position.x, object.position.y, object.position.z],
+        room,
+      ),
       rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
     });
   }
@@ -5460,11 +7143,23 @@ function SceneCameraNode({
         onDragStart(event);
       }}
     >
-      <CameraPrimitive selected={selected} hovered={hovered} opacity={opacity} />
+      <CameraPrimitive
+        selected={selected}
+        hovered={hovered}
+        opacity={opacity}
+      />
     </group>
   );
 
-  if (!selected || tool === "select" || tool === "add-wall" || tool === "add-furniture" || tool === "add-shape" || tool === "add-camera" || tool === "scale") {
+  if (
+    !selected ||
+    tool === "select" ||
+    tool === "add-wall" ||
+    tool === "add-furniture" ||
+    tool === "add-shape" ||
+    tool === "add-camera" ||
+    tool === "scale"
+  ) {
     return content;
   }
 
@@ -5490,12 +7185,27 @@ function ShapeResizeHandles({
 }: {
   shape: CustomShape;
   opacity: number;
-  onResizeStart: (axis: ShapeResizeAxis, sign: -1 | 1, event: ThreeEvent<PointerEvent>) => void;
+  onResizeStart: (
+    axis: ShapeResizeAxis,
+    sign: -1 | 1,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
 }) {
-  const safeScale = shape.scale.map((value) => Math.max(0.05, Math.abs(value))) as Vec3;
-  const inverseScale: Vec3 = [1 / safeScale[0], 1 / safeScale[1], 1 / safeScale[2]];
+  const safeScale = shape.scale.map((value) =>
+    Math.max(0.05, Math.abs(value)),
+  ) as Vec3;
+  const inverseScale: Vec3 = [
+    1 / safeScale[0],
+    1 / safeScale[1],
+    1 / safeScale[2],
+  ];
   const handleSize: Vec3 = [0.16, 0.16, 0.16];
-  const handles: Array<{ axis: ShapeResizeAxis; sign: -1 | 1; position: Vec3; color: string }> = [
+  const handles: Array<{
+    axis: ShapeResizeAxis;
+    sign: -1 | 1;
+    position: Vec3;
+    color: string;
+  }> = [
     { axis: 0, sign: -1, position: [-0.62, 0, 0], color: SCENE_COLORS.axisX },
     { axis: 0, sign: 1, position: [0.62, 0, 0], color: SCENE_COLORS.axisX },
     { axis: 1, sign: -1, position: [0, -0.62, 0], color: SCENE_COLORS.axisY },
@@ -5511,7 +7221,9 @@ function ShapeResizeHandles({
           key={`${handle.axis}-${handle.sign}`}
           position={handle.position}
           scale={inverseScale}
-          onPointerDown={(event) => onResizeStart(handle.axis, handle.sign, event)}
+          onPointerDown={(event) =>
+            onResizeStart(handle.axis, handle.sign, event)
+          }
         >
           <boxGeometry args={handleSize} />
           <meshStandardMaterial
@@ -5538,16 +7250,35 @@ function ShapeRotateHandle({
   opacity: number;
   onRotateStart: (event: ThreeEvent<PointerEvent>) => void;
 }) {
-  const safeScale = shape.scale.map((value) => Math.max(0.05, Math.abs(value))) as Vec3;
-  const inverseScale: Vec3 = [1 / safeScale[0], 1 / safeScale[1], 1 / safeScale[2]];
+  const safeScale = shape.scale.map((value) =>
+    Math.max(0.05, Math.abs(value)),
+  ) as Vec3;
+  const inverseScale: Vec3 = [
+    1 / safeScale[0],
+    1 / safeScale[1],
+    1 / safeScale[2],
+  ];
 
   return (
     <group userData={{ captureHidden: true }}>
-      <mesh position={[0, 0.72, 0]} rotation={[Math.PI / 2, 0, 0]} onPointerDown={onRotateStart}>
+      <mesh
+        position={[0, 0.72, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+        onPointerDown={onRotateStart}
+      >
         <torusGeometry args={[0.78, 0.012, 8, 72]} />
-        <meshBasicMaterial color={SCENE_COLORS.warmLight} transparent opacity={0.72 * opacity} depthWrite={false} />
+        <meshBasicMaterial
+          color={SCENE_COLORS.warmLight}
+          transparent
+          opacity={0.72 * opacity}
+          depthWrite={false}
+        />
       </mesh>
-      <mesh position={[0.86, 0.72, 0]} scale={inverseScale} onPointerDown={onRotateStart}>
+      <mesh
+        position={[0.86, 0.72, 0]}
+        scale={inverseScale}
+        onPointerDown={onRotateStart}
+      >
         <sphereGeometry args={[0.085, 18, 12]} />
         <meshStandardMaterial
           color={SCENE_COLORS.warmLight}
@@ -5563,7 +7294,15 @@ function ShapeRotateHandle({
   );
 }
 
-function CameraPrimitive({ selected, hovered, opacity }: { selected: boolean; hovered: boolean; opacity: number }) {
+function CameraPrimitive({
+  selected,
+  hovered,
+  opacity,
+}: {
+  selected: boolean;
+  hovered: boolean;
+  opacity: number;
+}) {
   const highlightOpacity = (selected ? 0.74 : hovered ? 0.52 : 0.34) * opacity;
 
   return (
@@ -5572,7 +7311,11 @@ function CameraPrimitive({ selected, hovered, opacity }: { selected: boolean; ho
         <boxGeometry args={[0.38, 0.26, 0.24]} />
         <meshStandardMaterial
           color={selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.darkWood}
-          emissive={selected || hovered ? SCENE_COLORS.wallSelected : SCENE_COLORS.darkWood}
+          emissive={
+            selected || hovered
+              ? SCENE_COLORS.wallSelected
+              : SCENE_COLORS.darkWood
+          }
           emissiveIntensity={selected ? 0.18 : hovered ? 0.1 : 0.02}
           roughness={0.48}
           {...fadedMaterialProps(opacity)}
@@ -5580,29 +7323,71 @@ function CameraPrimitive({ selected, hovered, opacity }: { selected: boolean; ho
       </mesh>
       <mesh position={[0, 0, -0.22]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.11, 0.15, 0.18, 24]} />
-        <meshStandardMaterial color={SCENE_COLORS.accent} emissive={SCENE_COLORS.accent} emissiveIntensity={0.14} {...fadedMaterialProps(opacity)} />
+        <meshStandardMaterial
+          color={SCENE_COLORS.accent}
+          emissive={SCENE_COLORS.accent}
+          emissiveIntensity={0.14}
+          {...fadedMaterialProps(opacity)}
+        />
       </mesh>
-      <mesh userData={{ captureHidden: true }} position={[0, 0, -0.64]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh
+        userData={{ captureHidden: true }}
+        position={[0, 0, -0.64]}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
         <coneGeometry args={[0.42, 0.78, 4, 1, true]} />
-        <meshBasicMaterial color={SCENE_COLORS.accent} wireframe transparent opacity={highlightOpacity} depthWrite={false} />
+        <meshBasicMaterial
+          color={SCENE_COLORS.accent}
+          wireframe
+          transparent
+          opacity={highlightOpacity}
+          depthWrite={false}
+        />
       </mesh>
-      <mesh userData={{ captureHidden: true }} position={[0, -0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        userData={{ captureHidden: true }}
+        position={[0, -0.2, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
         <ringGeometry args={[0.28, 0.32, 32]} />
-        <meshBasicMaterial color={SCENE_COLORS.accent} transparent opacity={highlightOpacity} depthWrite={false} />
+        <meshBasicMaterial
+          color={SCENE_COLORS.accent}
+          transparent
+          opacity={highlightOpacity}
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );
 }
 
-function ShapePrimitive({ shape, selected, hovered, opacity }: { shape: CustomShape; selected: boolean; hovered: boolean; opacity: number }) {
+function ShapePrimitive({
+  shape,
+  selected,
+  hovered,
+  opacity,
+}: {
+  shape: CustomShape;
+  selected: boolean;
+  hovered: boolean;
+  opacity: number;
+}) {
   return (
     <group>
       <ShapeGeometry kind={shape.kind} color={shape.color} opacity={opacity} />
       <mesh>
         <ShapeGeometryElement kind={shape.kind} outline />
-        <meshBasicMaterial userData={{ captureHidden: true }} color={SCENE_COLORS.shapeWire} wireframe transparent opacity={(selected ? 0.56 : hovered ? 0.42 : 0.24) * opacity} />
+        <meshBasicMaterial
+          userData={{ captureHidden: true }}
+          color={SCENE_COLORS.shapeWire}
+          wireframe
+          transparent
+          opacity={(selected ? 0.56 : hovered ? 0.42 : 0.24) * opacity}
+        />
       </mesh>
-      {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+      {selected || hovered ? (
+        <SelectionRing opacity={opacity} selected={selected} />
+      ) : null}
     </group>
   );
 }
@@ -5612,21 +7397,45 @@ function groundedShapeY(kind: CustomShape["kind"], scaleY: number) {
   return kind === "plane" ? safeScaleY * 0.02 : safeScaleY / 2;
 }
 
-function ShapeGeometry({ kind, color, opacity }: { kind: ShapeKind; color: string; opacity: number }) {
+function ShapeGeometry({
+  kind,
+  color,
+  opacity,
+}: {
+  kind: ShapeKind;
+  color: string;
+  opacity: number;
+}) {
   return (
     <mesh castShadow receiveShadow>
       <ShapeGeometryElement kind={kind} />
-      <meshStandardMaterial color={color} roughness={0.72} metalness={0.04} transparent opacity={0.86 * opacity} depthWrite={opacity >= 0.98} />
+      <meshStandardMaterial
+        color={color}
+        roughness={0.72}
+        metalness={0.04}
+        transparent
+        opacity={0.86 * opacity}
+        depthWrite={opacity >= 0.98}
+      />
     </mesh>
   );
 }
 
-function ShapeGeometryElement({ kind, outline = false }: { kind: ShapeKind; outline?: boolean }) {
+function ShapeGeometryElement({
+  kind,
+  outline = false,
+}: {
+  kind: ShapeKind;
+  outline?: boolean;
+}) {
   const lift = outline ? 0.004 : 0;
   if (kind === "sphere") return <sphereGeometry args={[0.5 + lift, 32, 20]} />;
-  if (kind === "cylinder") return <cylinderGeometry args={[0.5 + lift, 0.5 + lift, 1 + lift, 32]} />;
-  if (kind === "cone") return <coneGeometry args={[0.52 + lift, 1 + lift, 32]} />;
-  if (kind === "plane") return <boxGeometry args={[1 + lift, 0.04 + lift, 1 + lift]} />;
+  if (kind === "cylinder")
+    return <cylinderGeometry args={[0.5 + lift, 0.5 + lift, 1 + lift, 32]} />;
+  if (kind === "cone")
+    return <coneGeometry args={[0.52 + lift, 1 + lift, 32]} />;
+  if (kind === "plane")
+    return <boxGeometry args={[1 + lift, 0.04 + lift, 1 + lift]} />;
   return <boxGeometry args={[1 + lift, 1 + lift, 1 + lift]} />;
 }
 
@@ -5660,10 +7469,15 @@ type GeneratedModelBoundaryState = {
   hasError: boolean;
 };
 
-class GeneratedModelBoundary extends Component<GeneratedModelBoundaryProps, GeneratedModelBoundaryState> {
+class GeneratedModelBoundary extends Component<
+  GeneratedModelBoundaryProps,
+  GeneratedModelBoundaryState
+> {
   state: GeneratedModelBoundaryState = { hasError: false };
 
-  static getDerivedStateFromError(_error: unknown): GeneratedModelBoundaryState {
+  static getDerivedStateFromError(
+    _error: unknown,
+  ): GeneratedModelBoundaryState {
     return { hasError: true };
   }
 
@@ -5692,7 +7506,11 @@ function GeneratedModel({
   hovered: boolean;
   opacity: number;
   realLengthMeters?: number;
-  onMeasured?: (footprint: { width: number; depth: number; height: number }) => void;
+  onMeasured?: (footprint: {
+    width: number;
+    depth: number;
+    height: number;
+  }) => void;
 }) {
   const gltf = useGLTF(url);
 
@@ -5715,7 +7533,9 @@ function GeneratedModel({
     clone.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       if (Array.isArray(object.material)) {
-        object.material = (object.material as THREE.Material[]).map((m) => m.clone());
+        object.material = (object.material as THREE.Material[]).map((m) =>
+          m.clone(),
+        );
       } else if (object.material) {
         object.material = (object.material as THREE.Material).clone();
       }
@@ -5735,17 +7555,31 @@ function GeneratedModel({
   // can draw an accurate top-down bounding rectangle for this asset.
   const { uniformScale, floorOffsetY, footprint } = useMemo(() => {
     if (localBox.isEmpty() || !Number.isFinite(localBox.min.y)) {
-      return { uniformScale: 1, floorOffsetY: 0, footprint: null as null | { width: number; depth: number; height: number } };
+      return {
+        uniformScale: 1,
+        floorOffsetY: 0,
+        footprint: null as null | {
+          width: number;
+          depth: number;
+          height: number;
+        },
+      };
     }
     const longest = Math.max(localSize.x, localSize.y, localSize.z);
     const s =
-      typeof realLengthMeters === "number" && realLengthMeters > 0 && longest > 0
+      typeof realLengthMeters === "number" &&
+      realLengthMeters > 0 &&
+      longest > 0
         ? realLengthMeters / longest
         : 1;
     return {
       uniformScale: s,
       floorOffsetY: -localBox.min.y * s,
-      footprint: { width: localSize.x * s, depth: localSize.z * s, height: localSize.y * s },
+      footprint: {
+        width: localSize.x * s,
+        depth: localSize.z * s,
+        height: localSize.y * s,
+      },
     };
   }, [localBox, localSize, realLengthMeters]);
 
@@ -5762,7 +7596,9 @@ function GeneratedModel({
   useEffect(() => {
     model.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      const materials = Array.isArray(object.material)
+        ? object.material
+        : [object.material];
       materials.forEach((material) => {
         if (!material) return;
         material.transparent = opacity < 0.98;
@@ -5778,18 +7614,27 @@ function GeneratedModel({
     return () => {
       model.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((m) => { if (m) m.dispose(); });
+        const materials = Array.isArray(object.material)
+          ? object.material
+          : [object.material];
+        materials.forEach((m) => {
+          if (m) m.dispose();
+        });
       });
     };
   }, [model]);
 
   return (
     <group>
-      <group position={[0, floorOffsetY, 0]} scale={[uniformScale, uniformScale, uniformScale]}>
+      <group
+        position={[0, floorOffsetY, 0]}
+        scale={[uniformScale, uniformScale, uniformScale]}
+      >
         <primitive object={model} />
       </group>
-      {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+      {selected || hovered ? (
+        <SelectionRing opacity={opacity} selected={selected} />
+      ) : null}
     </group>
   );
 }
@@ -5807,7 +7652,12 @@ function GeneratedModelFallback({
 }) {
   return (
     <group>
-      <PrimitiveFurniture primitive={primitive} selected={selected} hovered={hovered} opacity={opacity} />
+      <PrimitiveFurniture
+        primitive={primitive}
+        selected={selected}
+        hovered={hovered}
+        opacity={opacity}
+      />
       {selected ? (
         <Html position={[0, 1.2, 0]} center zIndexRange={[1, 0]}>
           <span className="whitespace-nowrap rounded border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-overlay)_90%,transparent)] px-2 py-1 text-[11px] font-medium text-[var(--color-accent)] shadow-[var(--shadow-float)] [backdrop-filter:var(--panel-blur)]">
@@ -5835,13 +7685,22 @@ function PrimitiveFurniture({
       <group>
         <mesh castShadow position={[0, 0.23, 0]}>
           <cylinderGeometry args={[0.62, 0.62, 0.12, 36]} />
-          <meshStandardMaterial color={SCENE_COLORS.tableTop} roughness={0.55} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.tableTop}
+            roughness={0.55}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
         <mesh castShadow position={[0, 0.1, 0]}>
           <cylinderGeometry args={[0.08, 0.08, 0.2, 16]} />
-          <meshStandardMaterial color={SCENE_COLORS.darkWood} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.darkWood}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
-        {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+        {selected || hovered ? (
+          <SelectionRing opacity={opacity} selected={selected} />
+        ) : null}
       </group>
     );
   }
@@ -5851,13 +7710,21 @@ function PrimitiveFurniture({
       <group>
         <mesh castShadow position={[0, 0.25, 0]}>
           <boxGeometry args={[0.62, 0.14, 0.58]} />
-          <meshStandardMaterial color={SCENE_COLORS.upholstery} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.upholstery}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
         <mesh castShadow position={[0, 0.62, 0.24]}>
           <boxGeometry args={[0.62, 0.72, 0.12]} />
-          <meshStandardMaterial color={SCENE_COLORS.darkWood} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.darkWood}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
-        {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+        {selected || hovered ? (
+          <SelectionRing opacity={opacity} selected={selected} />
+        ) : null}
       </group>
     );
   }
@@ -5867,13 +7734,23 @@ function PrimitiveFurniture({
       <group>
         <mesh castShadow position={[0, 0.55, 0]}>
           <cylinderGeometry args={[0.04, 0.04, 1.1, 12]} />
-          <meshStandardMaterial color={SCENE_COLORS.darkWood} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.darkWood}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
         <mesh castShadow position={[0, 1.18, 0]}>
           <coneGeometry args={[0.28, 0.38, 28]} />
-          <meshStandardMaterial color={SCENE_COLORS.warmLight} emissive={SCENE_COLORS.warmLight} emissiveIntensity={0.28} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.warmLight}
+            emissive={SCENE_COLORS.warmLight}
+            emissiveIntensity={0.28}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
-        {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+        {selected || hovered ? (
+          <SelectionRing opacity={opacity} selected={selected} />
+        ) : null}
       </group>
     );
   }
@@ -5883,13 +7760,22 @@ function PrimitiveFurniture({
       <group>
         <mesh castShadow position={[0, 0.18, 0]}>
           <cylinderGeometry args={[0.22, 0.28, 0.36, 20]} />
-          <meshStandardMaterial color={SCENE_COLORS.clayDark} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.clayDark}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
         <mesh castShadow position={[0, 0.58, 0]}>
           <sphereGeometry args={[0.38, 20, 20]} />
-          <meshStandardMaterial color={SCENE_COLORS.leaf} roughness={0.8} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.leaf}
+            roughness={0.8}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
-        {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+        {selected || hovered ? (
+          <SelectionRing opacity={opacity} selected={selected} />
+        ) : null}
       </group>
     );
   }
@@ -5899,9 +7785,15 @@ function PrimitiveFurniture({
       <group>
         <mesh castShadow position={[0, 0.48, 0]}>
           <boxGeometry args={[1.3, 0.95, 0.42]} />
-          <meshStandardMaterial color={SCENE_COLORS.upholstery} roughness={0.65} {...fadedMaterialProps(opacity)} />
+          <meshStandardMaterial
+            color={SCENE_COLORS.upholstery}
+            roughness={0.65}
+            {...fadedMaterialProps(opacity)}
+          />
         </mesh>
-        {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+        {selected || hovered ? (
+          <SelectionRing opacity={opacity} selected={selected} />
+        ) : null}
       </group>
     );
   }
@@ -5910,21 +7802,39 @@ function PrimitiveFurniture({
     <group>
       <mesh castShadow position={[0, 0.34, 0]}>
         <boxGeometry args={[1.45, 0.45, 0.72]} />
-        <meshStandardMaterial color={SCENE_COLORS.upholstery} roughness={0.78} {...fadedMaterialProps(opacity)} />
+        <meshStandardMaterial
+          color={SCENE_COLORS.upholstery}
+          roughness={0.78}
+          {...fadedMaterialProps(opacity)}
+        />
       </mesh>
       <mesh castShadow position={[0, 0.74, 0.27]}>
         <boxGeometry args={[1.45, 0.68, 0.16]} />
-        <meshStandardMaterial color={SCENE_COLORS.wall} roughness={0.78} {...fadedMaterialProps(opacity)} />
+        <meshStandardMaterial
+          color={SCENE_COLORS.wall}
+          roughness={0.78}
+          {...fadedMaterialProps(opacity)}
+        />
       </mesh>
       <mesh castShadow position={[-0.74, 0.56, 0]}>
         <boxGeometry args={[0.12, 0.45, 0.72]} />
-        <meshStandardMaterial color={SCENE_COLORS.darkWood} roughness={0.78} {...fadedMaterialProps(opacity)} />
+        <meshStandardMaterial
+          color={SCENE_COLORS.darkWood}
+          roughness={0.78}
+          {...fadedMaterialProps(opacity)}
+        />
       </mesh>
       <mesh castShadow position={[0.74, 0.56, 0]}>
         <boxGeometry args={[0.12, 0.45, 0.72]} />
-        <meshStandardMaterial color={SCENE_COLORS.darkWood} roughness={0.78} {...fadedMaterialProps(opacity)} />
+        <meshStandardMaterial
+          color={SCENE_COLORS.darkWood}
+          roughness={0.78}
+          {...fadedMaterialProps(opacity)}
+        />
       </mesh>
-      {selected || hovered ? <SelectionRing opacity={opacity} selected={selected} /> : null}
+      {selected || hovered ? (
+        <SelectionRing opacity={opacity} selected={selected} />
+      ) : null}
     </group>
   );
 }
@@ -5943,11 +7853,25 @@ function isTrackpadWheel(event: WheelEvent) {
   return Math.abs(event.deltaY) < TRACKPAD_PIXEL_DELTA_THRESHOLD;
 }
 
-function SelectionRing({ opacity = 1, selected = true }: { opacity?: number; selected?: boolean }) {
+function SelectionRing({
+  opacity = 1,
+  selected = true,
+}: {
+  opacity?: number;
+  selected?: boolean;
+}) {
   return (
-    <mesh userData={{ captureHidden: true }} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.025, 0]}>
+    <mesh
+      userData={{ captureHidden: true }}
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0.025, 0]}
+    >
       <ringGeometry args={[0.85, 0.9, 48]} />
-      <meshBasicMaterial color={SCENE_COLORS.accent} transparent opacity={(selected ? 0.9 : 0.48) * opacity} />
+      <meshBasicMaterial
+        color={SCENE_COLORS.accent}
+        transparent
+        opacity={(selected ? 0.9 : 0.48) * opacity}
+      />
     </mesh>
   );
 }
@@ -5967,11 +7891,20 @@ function FurnitureRotateRing({
     event.stopPropagation();
     onRotateStart(event);
   };
-  const safeScale = scale.map((value) => Math.max(0.05, Math.abs(value))) as Vec3;
-  const inverseScale: Vec3 = [1 / safeScale[0], 1 / safeScale[1], 1 / safeScale[2]];
+  const safeScale = scale.map((value) =>
+    Math.max(0.05, Math.abs(value)),
+  ) as Vec3;
+  const inverseScale: Vec3 = [
+    1 / safeScale[0],
+    1 / safeScale[1],
+    1 / safeScale[2],
+  ];
   const worldHeight = size[1] * safeScale[1];
   const y = Math.max(0.72, worldHeight + 0.32) / safeScale[1];
-  const radius = Math.max(0.78, Math.max(size[0] * safeScale[0], size[2] * safeScale[2]) / 2 + 0.24);
+  const radius = Math.max(
+    0.78,
+    Math.max(size[0] * safeScale[0], size[2] * safeScale[2]) / 2 + 0.24,
+  );
 
   return (
     <group
@@ -5989,7 +7922,12 @@ function FurnitureRotateRing({
     >
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[radius, 0.014, 8, 72]} />
-        <meshBasicMaterial color="#FFFFFF" transparent opacity={0.78 * opacity} depthWrite={false} />
+        <meshBasicMaterial
+          color="#FFFFFF"
+          transparent
+          opacity={0.78 * opacity}
+          depthWrite={false}
+        />
       </mesh>
       <mesh position={[radius + 0.1, 0, 0]}>
         <sphereGeometry args={[0.075, 18, 12]} />
@@ -6020,19 +7958,59 @@ function FurnitureScaleHandles({
   size: Vec3;
   scale: Vec3;
   opacity: number;
-  onScaleStart: (axis: ShapeResizeAxis, sign: -1 | 1, event: ThreeEvent<PointerEvent>) => void;
+  onScaleStart: (
+    axis: ShapeResizeAxis,
+    sign: -1 | 1,
+    event: ThreeEvent<PointerEvent>,
+  ) => void;
 }) {
-  const safeScale = scale.map((value) => Math.max(0.05, Math.abs(value))) as Vec3;
-  const inverseScale: Vec3 = [1 / safeScale[0], 1 / safeScale[1], 1 / safeScale[2]];
+  const safeScale = scale.map((value) =>
+    Math.max(0.05, Math.abs(value)),
+  ) as Vec3;
+  const inverseScale: Vec3 = [
+    1 / safeScale[0],
+    1 / safeScale[1],
+    1 / safeScale[2],
+  ];
   const halfX = Math.max(0.36, size[0] / 2 + 0.16);
   const halfY = Math.max(0.34, size[1] / 2 + 0.16);
   const halfZ = Math.max(0.36, size[2] / 2 + 0.16);
-  const handles: Array<{ axis: ShapeResizeAxis; sign: -1 | 1; position: Vec3; color: string }> = [
-    { axis: 0, sign: -1, position: [-halfX, halfY * 0.52, 0], color: SCENE_COLORS.axisX },
-    { axis: 0, sign: 1, position: [halfX, halfY * 0.52, 0], color: SCENE_COLORS.axisX },
-    { axis: 1, sign: 1, position: [0, halfY * 2, 0], color: SCENE_COLORS.axisY },
-    { axis: 2, sign: -1, position: [0, halfY * 0.52, -halfZ], color: SCENE_COLORS.axisZ },
-    { axis: 2, sign: 1, position: [0, halfY * 0.52, halfZ], color: SCENE_COLORS.axisZ },
+  const handles: Array<{
+    axis: ShapeResizeAxis;
+    sign: -1 | 1;
+    position: Vec3;
+    color: string;
+  }> = [
+    {
+      axis: 0,
+      sign: -1,
+      position: [-halfX, halfY * 0.52, 0],
+      color: SCENE_COLORS.axisX,
+    },
+    {
+      axis: 0,
+      sign: 1,
+      position: [halfX, halfY * 0.52, 0],
+      color: SCENE_COLORS.axisX,
+    },
+    {
+      axis: 1,
+      sign: 1,
+      position: [0, halfY * 2, 0],
+      color: SCENE_COLORS.axisY,
+    },
+    {
+      axis: 2,
+      sign: -1,
+      position: [0, halfY * 0.52, -halfZ],
+      color: SCENE_COLORS.axisZ,
+    },
+    {
+      axis: 2,
+      sign: 1,
+      position: [0, halfY * 0.52, halfZ],
+      color: SCENE_COLORS.axisZ,
+    },
   ];
 
   return (

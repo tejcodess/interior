@@ -17,6 +17,11 @@ type Phase = "landing" | "tilting" | "revealing" | "entering" | "editor";
 export default function HomePage() {
   const [phase, setPhase] = useState<Phase>("landing");
   const triggered = useRef(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleEnter = useCallback(() => {
     if (triggered.current) return;
@@ -36,13 +41,30 @@ export default function HomePage() {
   }, []);
 
   // Keep landing mounted through "revealing" so its fade-out can play.
-  const showLanding = phase === "landing" || phase === "tilting" || phase === "revealing";
+  const showLanding =
+    phase === "landing" || phase === "tilting" || phase === "revealing";
   const landingOpacity = phase === "revealing" ? 0 : 1;
   const editorOpacity = phase === "landing" || phase === "tilting" ? 0 : 1;
   const isEntering = phase === "entering";
 
+  if (!mounted) {
+    return (
+      <div
+        suppressHydrationWarning
+        style={{
+          position: "relative",
+          width: "100vw",
+          height: "100vh",
+          overflow: "hidden",
+          background: "#090a0c",
+        }}
+      />
+    );
+  }
+
   return (
     <div
+      suppressHydrationWarning
       style={{
         position: "relative",
         width: "100vw",

@@ -1,10 +1,10 @@
 "use client";
 
-import { Box, Package, PackageSearch, WandSparkles } from "lucide-react";
+import { Box, Package, PackageSearch } from "lucide-react";
 import type { ComponentType } from "react";
 import { useState } from "react";
 
-export type RailSection = "objects" | "furniture" | "products" | "world";
+export type RailSection = "objects" | "furniture" | "products";
 
 const TOP_ITEMS: Array<{
   id: RailSection;
@@ -14,7 +14,6 @@ const TOP_ITEMS: Array<{
   { id: "objects", label: "Objects", icon: Box },
   { id: "furniture", label: "Furniture", icon: Package },
   { id: "products", label: "Product Search", icon: PackageSearch },
-  { id: "world", label: "World Generation", icon: WandSparkles },
 ];
 
 type IconRailProps = {
@@ -23,7 +22,11 @@ type IconRailProps = {
   onSectionChange: (section: RailSection) => void;
 };
 
-export function IconRail({ activeSection, panelOpen, onSectionChange }: IconRailProps) {
+export function IconRail({
+  activeSection,
+  panelOpen,
+  onSectionChange,
+}: IconRailProps) {
   return (
     <div
       style={{
@@ -39,7 +42,9 @@ export function IconRail({ activeSection, panelOpen, onSectionChange }: IconRail
         padding: "8px 0",
         gap: 2,
         zIndex: 20,
-        borderRight: panelOpen ? "1px solid var(--border-dim)" : "1px solid var(--border-mid)",
+        borderRight: panelOpen
+          ? "1px solid var(--border-dim)"
+          : "1px solid var(--border-mid)",
       }}
     >
       {TOP_ITEMS.map(({ id, label, icon: Icon }) => (
@@ -88,15 +93,15 @@ function RailButton({
         background: isActive
           ? "var(--accent-dim)"
           : hovered
-          ? "var(--surface-overlay)"
-          : "transparent",
+            ? "var(--surface-overlay)"
+            : "transparent",
         cursor: "pointer",
         position: "relative",
         color: isActive
           ? "var(--accent-text)"
           : hovered
-          ? "var(--text-primary)"
-          : "var(--text-secondary)",
+            ? "var(--text-primary)"
+            : "var(--text-secondary)",
         transition: "color 120ms ease, background 120ms ease",
       }}
     >

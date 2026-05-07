@@ -18,6 +18,7 @@ import {
 import { PrecisionLayout } from "./components/PrecisionLayout";
 import { SceneView } from "./components/SceneView";
 import { BlueprintView } from "./components/BlueprintView";
+import { buildBlueprintDxf } from "./lib/blueprintDxf";
 import type { ViewMode } from "./components/ModeBar";
 import {
   buildFurnitureAssetMap,
@@ -31,14 +32,21 @@ import {
   initialState,
   removeWallSegment,
 } from "./state/editor";
-import type { CaptureImage, EditorState, FurnitureAsset, LibraryEntry } from "./state/types";
+import type {
+  CaptureImage,
+  EditorState,
+  FurnitureAsset,
+  LibraryEntry,
+} from "./state/types";
 
 export default function App({ entering = false }: { entering?: boolean }) {
   const [state, setState] = useState<EditorState>(() => ({ ...initialState }));
   const [viewMode, setViewMode] = useState<ViewMode>("Block");
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [savingAssetId, setSavingAssetId] = useState<string | null>(null);
-  const sceneCaptureRef = useRef<() => CaptureImage | undefined>(() => undefined);
+  const sceneCaptureRef = useRef<() => CaptureImage | undefined>(
+    () => undefined,
+  );
   const blueprintCaptureRef = useRef<() => string | undefined>(() => undefined);
   const generationRunRef = useRef(0);
   const furnitureStreamsRef = useRef<Map<string, EventSource>>(new Map());
@@ -59,22 +67,35 @@ export default function App({ entering = false }: { entering?: boolean }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      )
+        return;
 
       if (event.key === "Delete" || event.key === "Backspace") {
         setState((current) => {
-          if (current.selected?.type !== "furniture" && current.selected?.type !== "shape") return current;
+          if (
+            current.selected?.type !== "furniture" &&
+            current.selected?.type !== "shape"
+          )
+            return current;
           const id = current.selected.id;
           if (current.selected.type === "shape") {
             return {
               ...current,
-              customShapes: current.customShapes.filter((shape) => shape.id !== id),
+              customShapes: current.customShapes.filter(
+                (shape) => shape.id !== id,
+              ),
               selected: null,
             };
           }
           return {
             ...current,
-            furnitureInstances: current.furnitureInstances.filter((i) => i.id !== id),
+            furnitureInstances: current.furnitureInstances.filter(
+              (i) => i.id !== id,
+            ),
             selected: null,
           };
         });
@@ -91,7 +112,14 @@ export default function App({ entering = false }: { entering?: boolean }) {
             ...current,
             furnitureInstances: current.furnitureInstances.map((i) =>
               i.id === id
-                ? { ...i, rotation: [i.rotation[0], i.rotation[1] + delta, i.rotation[2]] as [number, number, number] }
+                ? {
+                    ...i,
+                    rotation: [
+                      i.rotation[0],
+                      i.rotation[1] + delta,
+                      i.rotation[2],
+                    ] as [number, number, number],
+                  }
                 : i,
             ),
           };
@@ -102,20 +130,61 @@ export default function App({ entering = false }: { entering?: boolean }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const registerSceneCapture = useCallback((capture: () => CaptureImage | undefined) => {
-    sceneCaptureRef.current = capture;
-  }, []);
+  const registerSceneCapture = useCallback(
+    (capture: () => CaptureImage | undefined) => {
+      sceneCaptureRef.current = capture;
+    },
+    [],
+  );
 
-  const registerBlueprintCapture = useCallback((capture: () => string | undefined) => {
-    blueprintCaptureRef.current = capture;
-  }, []);
+  const registerBlueprintCapture = useCallback(
+    (capture: () => string | undefined) => {
+      blueprintCaptureRef.current = capture;
+    },
+    [],
+  );
+
+  const handleDownloadBlueprint = useCallback(() => {
+    const { dxf, fileName } = buildBlueprintDxf({
+      projectTitle: state.projectTitle,
+      room: state.room,
+      assets: state.furnitureAssets,
+      assetById,
+      instances: state.furnitureInstances,
+      shapes: state.customShapes,
+      doors: state.doors,
+      windows: state.windows,
+      wallSegments: state.wallSegments,
+    });
+
+    const blob = new Blob([dxf], { type: "application/dxf;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }, [
+    assetById,
+    state.customShapes,
+    state.doors,
+    state.furnitureAssets,
+    state.furnitureInstances,
+    state.projectTitle,
+    state.room,
+    state.wallSegments,
+    state.windows,
+  ]);
 
   // The 3D viewport reports the post-scale axis-aligned size of each loaded
   // GLB so the 2D blueprint can draw an accurate top-down bounding rectangle.
   // We dedupe by comparing against the asset's current footprint with a small
   // tolerance to avoid render loops triggered by floating-point drift.
   const handleAssetMeasured = useCallback(
-    (assetId: string, footprint: { width: number; depth: number; height: number }) => {
+    (
+      assetId: string,
+      footprint: { width: number; depth: number; height: number },
+    ) => {
       setState((current) => {
         let changed = false;
         const furnitureAssets = current.furnitureAssets.map((item) => {
@@ -142,7 +211,10 @@ export default function App({ entering = false }: { entering?: boolean }) {
     const asset = createFurnitureAsset(prompt);
     setState((current) => ({
       ...current,
-      furnitureAssets: [{ ...asset, status: "generating", progress: 0 }, ...current.furnitureAssets],
+      furnitureAssets: [
+        { ...asset, status: "generating", progress: 0 },
+        ...current.furnitureAssets,
+      ],
     }));
 
     // Kick off the real-world length estimate in parallel with the Meshy job.
@@ -155,16 +227,24 @@ export default function App({ entering = false }: { entering?: boolean }) {
       setState((current) => ({
         ...current,
         furnitureAssets: current.furnitureAssets.map((item) =>
-          item.id === asset.id ? { ...item, realLengthMeters: lengthMeters } : item,
+          item.id === asset.id
+            ? { ...item, realLengthMeters: lengthMeters }
+            : item,
         ),
       }));
     });
 
-    const started = await startFurnitureMeshyTask({ ...asset, status: "generating", progress: 0 });
+    const started = await startFurnitureMeshyTask({
+      ...asset,
+      status: "generating",
+      progress: 0,
+    });
     setState((current) => ({
       ...current,
       furnitureAssets: current.furnitureAssets.map((item) =>
-        item.id === asset.id ? { ...started, realLengthMeters: item.realLengthMeters } : item,
+        item.id === asset.id
+          ? { ...started, realLengthMeters: item.realLengthMeters }
+          : item,
       ),
     }));
 
@@ -193,7 +273,8 @@ export default function App({ entering = false }: { entering?: boolean }) {
         setState((current) => {
           let changed = false;
           const furnitureAssets = current.furnitureAssets.map((item) => {
-            if (item.id !== asset.id || item.status !== "generating") return item;
+            if (item.id !== asset.id || item.status !== "generating")
+              return item;
             changed = true;
             return { ...item, status: "failed" as const, error };
           });
@@ -215,7 +296,8 @@ export default function App({ entering = false }: { entering?: boolean }) {
   }, []);
 
   // Auto-switch to splat view when a new world finishes generating, and back to Block if it's gone.
-  const splatUrl = state.marble.status === "complete" ? state.marble.spzUrl : undefined;
+  const splatUrl =
+    state.marble.status === "complete" ? state.marble.spzUrl : undefined;
   useEffect(() => {
     setViewMode(splatUrl ? "Splat" : "Block");
   }, [splatUrl]);
@@ -317,7 +399,10 @@ export default function App({ entering = false }: { entering?: boolean }) {
 
         pollCount += 1;
         const elapsedMs = performance.now() - startedAt;
-        const fallbackProgress = Math.min(0.95, 0.08 + 0.78 * (1 - Math.exp(-pollCount / 12)));
+        const fallbackProgress = Math.min(
+          0.95,
+          0.08 + 0.78 * (1 - Math.exp(-pollCount / 12)),
+        );
         const etaMs = Math.max(0, 90_000 - elapsedMs);
         setState((current) => {
           if (current.marble.status !== "generating") return current;
@@ -327,7 +412,10 @@ export default function App({ entering = false }: { entering?: boolean }) {
               ...current.marble,
               ...result,
               payload: result.payload ?? started.payload,
-              progress: Math.max(current.marble.progress ?? 0, result.progress ?? fallbackProgress),
+              progress: Math.max(
+                current.marble.progress ?? 0,
+                result.progress ?? fallbackProgress,
+              ),
               etaMs: result.etaMs ?? etaMs,
             },
           };
@@ -340,7 +428,10 @@ export default function App({ entering = false }: { entering?: boolean }) {
         marble: {
           ...current.marble,
           status: "failed",
-          error: error instanceof Error ? error.message : "Marble generation failed.",
+          error:
+            error instanceof Error
+              ? error.message
+              : "Marble generation failed.",
         },
       }));
     }
@@ -352,7 +443,9 @@ export default function App({ entering = false }: { entering?: boolean }) {
   }
 
   function handleUploadModel(file: File) {
-    const valid = file.name.toLowerCase().endsWith(".glb") || file.name.toLowerCase().endsWith(".gltf");
+    const valid =
+      file.name.toLowerCase().endsWith(".glb") ||
+      file.name.toLowerCase().endsWith(".gltf");
     if (!valid) {
       setState((current) => ({
         ...current,
@@ -389,7 +482,14 @@ export default function App({ entering = false }: { entering?: boolean }) {
       ...current,
       furnitureInstances: current.furnitureInstances.map((i) =>
         i.id === id
-          ? { ...i, rotation: [i.rotation[0], i.rotation[1] + deltaRad, i.rotation[2]] as [number, number, number] }
+          ? {
+              ...i,
+              rotation: [
+                i.rotation[0],
+                i.rotation[1] + deltaRad,
+                i.rotation[2],
+              ] as [number, number, number],
+            }
           : i,
       ),
     }));
@@ -401,7 +501,10 @@ export default function App({ entering = false }: { entering?: boolean }) {
     const entry = await saveAssetToLibrary(asset);
     setSavingAssetId(null);
     if (entry) {
-      setLibraryEntries((current) => [entry, ...current.filter((e) => e.id !== entry.id)]);
+      setLibraryEntries((current) => [
+        entry,
+        ...current.filter((e) => e.id !== entry.id),
+      ]);
       // The saved entry's id equals the original asset id, so the existing
       // furnitureAsset record already covers it — no duplicate needed.
     }
@@ -412,18 +515,28 @@ export default function App({ entering = false }: { entering?: boolean }) {
     setLibraryEntries((current) => current.filter((e) => e.id !== id));
     setState((current) => ({
       ...current,
-      furnitureInstances: current.furnitureInstances.filter((i) => i.assetId !== id),
+      furnitureInstances: current.furnitureInstances.filter(
+        (i) => i.assetId !== id,
+      ),
       selected:
         current.selected?.type === "furniture" &&
-        current.furnitureInstances.find((i) => i.id === current.selected?.id)?.assetId === id
+        current.furnitureInstances.find((i) => i.id === current.selected?.id)
+          ?.assetId === id
           ? null
           : current.selected,
     }));
   }
 
-  const setRoom: React.ComponentProps<typeof SceneView>["onRoomChange"] = (room) =>
+  const setRoom: React.ComponentProps<typeof SceneView>["onRoomChange"] = (
+    room,
+  ) =>
     setState((current) => {
-      const openings = clampOpeningsToLayout(room, current.wallSegments, current.doors, current.windows);
+      const openings = clampOpeningsToLayout(
+        room,
+        current.wallSegments,
+        current.doors,
+        current.windows,
+      );
       return {
         ...current,
         room,
@@ -439,19 +552,45 @@ export default function App({ entering = false }: { entering?: boolean }) {
         })),
       };
     });
-  const setInstances: React.ComponentProps<typeof SceneView>["onInstancesChange"] = (furnitureInstances) =>
+  const setInstances: React.ComponentProps<
+    typeof SceneView
+  >["onInstancesChange"] = (furnitureInstances) =>
     setState((current) => ({ ...current, furnitureInstances }));
-  const setShapes: React.ComponentProps<typeof SceneView>["onShapesChange"] = (customShapes) =>
-    setState((current) => ({ ...current, customShapes }));
-  const setCameras: React.ComponentProps<typeof SceneView>["onCamerasChange"] = (cameras) =>
+  const setShapes: React.ComponentProps<typeof SceneView>["onShapesChange"] = (
+    customShapes,
+  ) => setState((current) => ({ ...current, customShapes }));
+  const setCameras: React.ComponentProps<
+    typeof SceneView
+  >["onCamerasChange"] = (cameras) =>
     setState((current) => ({ ...current, cameras }));
-  const setDoors: React.ComponentProps<typeof SceneView>["onDoorsChange"] = (doors) =>
-    setState((current) => ({ ...current, doors }));
-  const setWindows: React.ComponentProps<typeof SceneView>["onWindowsChange"] = (windows) =>
+
+  function handleRemoveCamera(id: string) {
+    setState((current) => ({
+      ...current,
+      cameras: current.cameras.filter((c) => c.id !== id),
+      selected:
+        current.selected?.type === "camera" && current.selected.id === id
+          ? null
+          : current.selected,
+    }));
+  }
+  const setDoors: React.ComponentProps<typeof SceneView>["onDoorsChange"] = (
+    doors,
+  ) => setState((current) => ({ ...current, doors }));
+  const setWindows: React.ComponentProps<
+    typeof SceneView
+  >["onWindowsChange"] = (windows) =>
     setState((current) => ({ ...current, windows }));
-  const setWallSegments: React.ComponentProps<typeof SceneView>["onWallSegmentsChange"] = (wallSegments) =>
+  const setWallSegments: React.ComponentProps<
+    typeof SceneView
+  >["onWallSegmentsChange"] = (wallSegments) =>
     setState((current) => {
-      const openings = clampOpeningsToLayout(current.room, wallSegments, current.doors, current.windows);
+      const openings = clampOpeningsToLayout(
+        current.room,
+        wallSegments,
+        current.doors,
+        current.windows,
+      );
       return {
         ...current,
         wallSegments,
@@ -467,10 +606,12 @@ export default function App({ entering = false }: { entering?: boolean }) {
         })),
       };
     });
-  const setSelected: React.ComponentProps<typeof SceneView>["onSelect"] = (selected) =>
-    setState((current) => ({ ...current, selected }));
-  const setTool: React.ComponentProps<typeof SceneView>["onToolChange"] = (tool) =>
-    setState((current) => ({ ...current, tool }));
+  const setSelected: React.ComponentProps<typeof SceneView>["onSelect"] = (
+    selected,
+  ) => setState((current) => ({ ...current, selected }));
+  const setTool: React.ComponentProps<typeof SceneView>["onToolChange"] = (
+    tool,
+  ) => setState((current) => ({ ...current, tool }));
 
   function handleAddDoor() {
     setState((current) => {
@@ -527,17 +668,26 @@ export default function App({ entering = false }: { entering?: boolean }) {
     }));
   }
 
-  function handleRemoveWallSegment(wall: Parameters<typeof removeWallSegment>[1], id: string) {
+  function handleRemoveWallSegment(
+    wall: Parameters<typeof removeWallSegment>[1],
+    id: string,
+  ) {
     setState((current) => {
       const wallSegments = removeWallSegment(current.wallSegments, wall, id);
-      const openings = clampOpeningsToLayout(current.room, wallSegments, current.doors, current.windows);
+      const openings = clampOpeningsToLayout(
+        current.room,
+        wallSegments,
+        current.doors,
+        current.windows,
+      );
       return {
         ...current,
         wallSegments,
         doors: openings.doors,
         windows: openings.windows,
         selected:
-          current.selected?.type === "wall-segment" && current.selected.id === id
+          current.selected?.type === "wall-segment" &&
+          current.selected.id === id
             ? null
             : current.selected,
       };
@@ -547,13 +697,19 @@ export default function App({ entering = false }: { entering?: boolean }) {
   function handleResetWallSegments() {
     setState((current) => {
       const wallSegments = createDefaultWallSegmentation();
-      const openings = clampOpeningsToLayout(current.room, wallSegments, current.doors, current.windows);
+      const openings = clampOpeningsToLayout(
+        current.room,
+        wallSegments,
+        current.doors,
+        current.windows,
+      );
       return {
         ...current,
         wallSegments,
         doors: openings.doors,
         windows: openings.windows,
-        selected: current.selected?.type === "wall-segment" ? null : current.selected,
+        selected:
+          current.selected?.type === "wall-segment" ? null : current.selected,
       };
     });
   }
@@ -652,7 +808,11 @@ export default function App({ entering = false }: { entering?: boolean }) {
       onToolChange={setTool}
       onSelect={setSelected}
       onActiveShapeKindChange={(activeShapeKind) =>
-        setState((current) => ({ ...current, activeShapeKind, tool: "add-shape" }))
+        setState((current) => ({
+          ...current,
+          activeShapeKind,
+          tool: "add-shape",
+        }))
       }
       onUploadModel={handleUploadModel}
       onAddDoor={handleAddDoor}
@@ -663,15 +823,19 @@ export default function App({ entering = false }: { entering?: boolean }) {
       onRotateFurnitureInstance={handleRotateFurnitureInstance}
       onRemoveShape={handleRemoveShape}
       onRemoveWallSegment={handleRemoveWallSegment}
+      onRemoveCamera={handleRemoveCamera}
       onResetWallSegments={handleResetWallSegments}
       onGenerateFurniture={handleGenerateFurniture}
+      onDownloadBlueprint={handleDownloadBlueprint}
       libraryEntries={libraryEntries}
       savingAssetId={savingAssetId}
       onSaveAsset={handleSaveAsset}
       onDeleteLibraryEntry={handleDeleteLibraryEntry}
       upload={state.upload}
       stylePrompt={state.stylePrompt}
-      onStylePromptChange={(stylePrompt) => setState((current) => ({ ...current, stylePrompt }))}
+      onStylePromptChange={(stylePrompt) =>
+        setState((current) => ({ ...current, stylePrompt }))
+      }
       marble={state.marble}
       onGenerateRoom={handleGenerateFinalRoom}
       onCancelRun={handleCancelRun}
