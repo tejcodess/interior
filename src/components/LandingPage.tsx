@@ -147,7 +147,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
               : "scale(1) translateY(18px)",
         }}
       >
-        {/* Brand mark — INTER logo + wordmark */}
+        {/* Brand mark — ZenSpace logo + wordmark */}
         <div
           style={{
             display: "flex",
@@ -161,7 +161,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
         >
           <img
             src="/inter-logo.png"
-            alt="INTER"
+            alt="ZenSpace"
             width={28}
             height={28}
             style={{
@@ -174,12 +174,12 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
             style={{
               fontFamily: "'Bebas Neue', 'Arial Narrow', sans-serif",
               fontSize: 22,
-              letterSpacing: "0.32em",
+              letterSpacing: "0.12em",
               color: "rgba(255,255,255,0.78)",
               userSelect: "none",
             }}
           >
-            INTER
+            ZenSpace
           </span>
           <span
             style={{
@@ -197,7 +197,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
               color: "rgba(255,255,255,0.3)",
             }}
           >
-            3D Interior Studio
+            AI Interior Studio
           </span>
         </div>
 
@@ -284,7 +284,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
           }}
         >
           <button className="landing-btn" onClick={handleEnter}>
-            Enter INTER
+            Enter ZenSpace
             <span className="arrow">→</span>
           </button>
         </div>

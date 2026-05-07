@@ -11,7 +11,11 @@ type ModeBarProps = {
   splatAvailable: boolean;
 };
 
-export function ModeBar({ activeMode, onModeChange, splatAvailable }: ModeBarProps) {
+export function ModeBar({
+  activeMode,
+  onModeChange,
+  splatAvailable,
+}: ModeBarProps) {
   return (
     <div
       style={{
@@ -44,10 +48,10 @@ export function ModeBar({ activeMode, onModeChange, splatAvailable }: ModeBarPro
               disabled={disabled}
               title={
                 disabled
-                  ? "Generate a world to view the gaussian splat"
+                  ? "Gaussian splat view is unavailable"
                   : mode === "Block"
-                  ? "Show the blockout 3D model"
-                  : "Show the generated gaussian splat"
+                    ? "Show the blockout 3D model"
+                    : "Show the generated gaussian splat"
               }
               onClick={() => {
                 if (!disabled) onModeChange(mode);
@@ -97,10 +101,10 @@ function ModeButton({
         color: disabled
           ? "var(--text-ghost)"
           : active
-          ? "var(--accent-text)"
-          : hovered
-          ? "var(--text-bright)"
-          : "var(--text-primary)",
+            ? "var(--accent-text)"
+            : hovered
+              ? "var(--text-bright)"
+              : "var(--text-primary)",
         transition: "background 100ms, color 100ms",
         opacity: disabled ? 0.55 : 1,
       }}

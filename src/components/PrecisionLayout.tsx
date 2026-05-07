@@ -27,7 +27,6 @@ import { ModeBar, type ViewMode } from "./ModeBar";
 import { ObjectsPanel } from "./ObjectsPanel";
 import { ProductSearchPanel } from "./ProductSearchPanel";
 import { Viewport } from "./Viewport";
-import { WorldPanel } from "./WorldPanel";
 
 type PrecisionLayoutProps = {
   viewport: ReactNode;
@@ -63,9 +62,11 @@ type PrecisionLayoutProps = {
   onRotateFurnitureInstance: (id: string, deltaRad: number) => void;
   onRemoveShape: (id: string) => void;
   onRemoveWallSegment: (wall: WallId, id: string) => void;
+  onRemoveCamera: (id: string) => void;
   onResetWallSegments: () => void;
 
   onGenerateFurniture: (prompt: string) => void;
+  onDownloadBlueprint: () => void;
   libraryEntries: LibraryEntry[];
   savingAssetId: string | null;
   onSaveAsset: (asset: FurnitureAsset) => void;
@@ -110,18 +111,20 @@ export function PrecisionLayout({
   onRotateFurnitureInstance,
   onRemoveShape,
   onRemoveWallSegment,
+  onRemoveCamera,
   onResetWallSegments,
   onGenerateFurniture,
+  onDownloadBlueprint,
   libraryEntries,
   savingAssetId,
   onSaveAsset,
   onDeleteLibraryEntry,
   upload,
-  stylePrompt,
-  onStylePromptChange,
+  stylePrompt: _stylePrompt,
+  onStylePromptChange: _onStylePromptChange,
   marble,
-  onGenerateRoom,
-  onCancelRun,
+  onGenerateRoom: _onGenerateRoom,
+  onCancelRun: _onCancelRun,
   entering = false,
 }: PrecisionLayoutProps) {
   const [activeSection, setActiveSection] = useState<RailSection>("objects");
@@ -215,6 +218,7 @@ export function PrecisionLayout({
             onRotateFurnitureInstance={onRotateFurnitureInstance}
             onRemoveShape={onRemoveShape}
             onRemoveWallSegment={onRemoveWallSegment}
+            onRemoveCamera={onRemoveCamera}
             onResetWallSegments={onResetWallSegments}
             onClose={() => setPanelOpen(false)}
           />
@@ -250,20 +254,6 @@ export function PrecisionLayout({
         </div>
       </div>
 
-      <div style={wrapperStyleFor("ui-from-left", 80, entering, preHidden)}>
-        <div style={{ pointerEvents: "auto" }}>
-          <WorldPanel
-            open={panelOpen && activeSection === "world"}
-            prompt={stylePrompt}
-            marble={marble}
-            onPromptChange={onStylePromptChange}
-            onGenerate={onGenerateRoom}
-            onCancelRun={onCancelRun}
-            onClose={() => setPanelOpen(false)}
-          />
-        </div>
-      </div>
-
       {/* Layer 2 — floating chrome (never covers viewport center) */}
       <div style={wrapperStyleFor("ui-from-top", 40, entering, preHidden)}>
         <div style={{ pointerEvents: "auto" }}>
@@ -280,6 +270,7 @@ export function PrecisionLayout({
           <MinimapPanel
             room={room}
             blueprint={blueprintPreview}
+            onDownloadBlueprint={onDownloadBlueprint}
             onExpand={() => setBlueprintDialogOpen(true)}
           />
         </div>
@@ -311,6 +302,7 @@ export function PrecisionLayout({
       <BlueprintDialog
         open={blueprintDialogOpen}
         blueprint={blueprint}
+        onDownloadBlueprint={onDownloadBlueprint}
         onClose={() => setBlueprintDialogOpen(false)}
       />
     </div>
@@ -333,6 +325,8 @@ function wrapperStyleFor(
     inset: 0,
     pointerEvents: "none",
     opacity: preHidden ? 0 : undefined,
-    animation: entering ? `${name} 0.55s ${ENTRANCE_EASE} ${delay}ms both` : undefined,
+    animation: entering
+      ? `${name} 0.55s ${ENTRANCE_EASE} ${delay}ms both`
+      : undefined,
   };
 }

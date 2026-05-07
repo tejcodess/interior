@@ -55,6 +55,7 @@ type ObjectsPanelProps = {
   onRotateFurnitureInstance: (id: string, deltaRad: number) => void;
   onRemoveShape: (id: string) => void;
   onRemoveWallSegment: (wall: WallId, id: string) => void;
+  onRemoveCamera: (id: string) => void;
   onResetWallSegments: () => void;
   onClose: () => void;
 };
@@ -115,6 +116,7 @@ export function ObjectsPanel({
   onRotateFurnitureInstance,
   onRemoveShape,
   onRemoveWallSegment,
+  onRemoveCamera,
   onResetWallSegments,
   onClose,
 }: ObjectsPanelProps) {
@@ -303,6 +305,7 @@ export function ObjectsPanel({
                 label={camera.name}
                 selected={selected?.type === "camera" && selected.id === camera.id}
                 onSelect={() => onSelect({ type: "camera", id: camera.id })}
+                onRemove={() => onRemoveCamera(camera.id)}
               />
             ))}
           </ListSection>
@@ -391,11 +394,12 @@ function SectionLabel({ children, inline }: { children: ReactNode; inline?: bool
   return (
     <div
       style={{
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 500,
         color: "var(--text-secondary)",
-        letterSpacing: "0.14em",
+        letterSpacing: "0.10em",
         textTransform: "uppercase",
+        fontFamily: "var(--font-ui)",
         marginBottom: inline ? 0 : 8,
         lineHeight: 1,
       }}
@@ -582,6 +586,9 @@ function ItemRow({
         style={{
           flex: 1,
           fontSize: 12,
+          fontWeight: 400,
+          fontFamily: "var(--font-ui)",
+          letterSpacing: "0.01em",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",

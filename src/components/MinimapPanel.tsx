@@ -1,6 +1,6 @@
 "use client";
 
-import { Map, Maximize2 } from "lucide-react";
+import { Download, Map, Maximize2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { roomDimensions } from "../state/editor";
 import type { RoomBounds } from "../state/types";
@@ -9,9 +9,15 @@ type MinimapPanelProps = {
   room: RoomBounds;
   blueprint: ReactNode;
   onExpand?: () => void;
+  onDownloadBlueprint?: () => void;
 };
 
-export function MinimapPanel({ room, blueprint, onExpand }: MinimapPanelProps) {
+export function MinimapPanel({
+  room,
+  blueprint,
+  onExpand,
+  onDownloadBlueprint,
+}: MinimapPanelProps) {
   const dims = roomDimensions(room);
 
   return (
@@ -63,7 +69,16 @@ export function MinimapPanel({ room, blueprint, onExpand }: MinimapPanelProps) {
         >
           {dims.width.toFixed(1)} × {dims.depth.toFixed(1)} m
         </span>
-        <HeaderBtn icon={<Maximize2 size={10} strokeWidth={1.6} />} label="Expand" onClick={onExpand} />
+        <HeaderBtn
+          icon={<Download size={10} strokeWidth={1.6} />}
+          label="Download AutoCAD DXF"
+          onClick={onDownloadBlueprint}
+        />
+        <HeaderBtn
+          icon={<Maximize2 size={10} strokeWidth={1.6} />}
+          label="Expand"
+          onClick={onExpand}
+        />
       </div>
 
       <div
@@ -80,7 +95,15 @@ export function MinimapPanel({ room, blueprint, onExpand }: MinimapPanelProps) {
   );
 }
 
-function HeaderBtn({ icon, label, onClick }: { icon: ReactNode; label: string; onClick?: () => void }) {
+function HeaderBtn({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick?: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
