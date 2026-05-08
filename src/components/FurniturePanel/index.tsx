@@ -3,6 +3,7 @@
 import { BookMarked, Cpu, FileUp, Minus, Package, Sparkles } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import type { FurnitureAsset, LibraryEntry } from "../../state/types";
+import { VibeLayoutInput, type VibeLayoutInputProps } from "../VibeLayoutInput";
 import { AssetCard } from "./AssetCard";
 import { LibraryCard } from "./LibraryCard";
 
@@ -16,6 +17,8 @@ type FurniturePanelProps = {
   onSaveAsset: (asset: FurnitureAsset) => void;
   onDeleteLibraryEntry: (id: string) => void;
   onClose: () => void;
+  /** Props forwarded to the VibeLayoutInput sub-component */
+  vibeLayoutProps: VibeLayoutInputProps;
 };
 
 export function FurniturePanel({
@@ -28,6 +31,7 @@ export function FurniturePanel({
   onSaveAsset,
   onDeleteLibraryEntry,
   onClose,
+  vibeLayoutProps,
 }: FurniturePanelProps) {
   const [inputValue, setInputValue] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -121,6 +125,9 @@ export function FurniturePanel({
           />
         </div>
       </div>
+
+      {/* ── Vibe Auto-Layout ──────────────────────────────── */}
+      <VibeLayoutInput {...vibeLayoutProps} />
 
       {/* ── Generate prompt ───────────────────────────────── */}
       <div style={{ padding: "12px 12px 14px", flexShrink: 0, borderBottom: "1px solid var(--border-dim)" }}>

@@ -31,11 +31,13 @@ import {
   createWindowOpening,
   initialState,
   removeWallSegment,
+  roomDimensions,
 } from "./state/editor";
 import type {
   CaptureImage,
   EditorState,
   FurnitureAsset,
+  FurnitureInstance,
   LibraryEntry,
 } from "./state/types";
 
@@ -44,6 +46,8 @@ export default function App({ entering = false }: { entering?: boolean }) {
   const [viewMode, setViewMode] = useState<ViewMode>("Block");
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [savingAssetId, setSavingAssetId] = useState<string | null>(null);
+  // Undo stack — each entry is a snapshot of furnitureInstances before a batch
+  const [undoStack, setUndoStack] = useState<FurnitureInstance[][]>([]);
   const sceneCaptureRef = useRef<() => CaptureImage | undefined>(
     () => undefined,
   );
@@ -128,6 +132,29 @@ export default function App({ entering = false }: { entering?: boolean }) {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // ── Ctrl+Z global undo handler ─────────────────────────────────────────────
+  useEffect(() => {
+    function handleUndo(event: KeyboardEvent) {
+      if (!((event.ctrlKey || event.metaKey) && event.key === "z")) return;
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      )
+        return;
+      setUndoStack((prev) => {
+        if (prev.length === 0) return prev;
+        const snapshot = prev[prev.length - 1];
+        const next = prev.slice(0, -1);
+        setState((current) => ({ ...current, furnitureInstances: snapshot }));
+        return next;
+      });
+    }
+    window.addEventListener("keydown", handleUndo);
+    return () => window.removeEventListener("keydown", handleUndo);
   }, []);
 
   const registerSceneCapture = useCallback(
@@ -474,6 +501,25 @@ export default function App({ entering = false }: { entering?: boolean }) {
         current.selected?.type === "furniture" && current.selected.id === id
           ? null
           : current.selected,
+    }));
+  }
+
+  // ── Vibe batch add ─────────────────────────────────────────────────────────
+
+  function handlePushUndo(snapshot: FurnitureInstance[]) {
+    setUndoStack((prev) => [...prev, snapshot]);
+  }
+
+  function handleBatchAdd(
+    newInstances: FurnitureInstance[],
+    newAssets: FurnitureAsset[],
+    vibe?: string,
+  ) {
+    setState((current) => ({
+      ...current,
+      furnitureAssets: [...newAssets, ...current.furnitureAssets],
+      furnitureInstances: [...current.furnitureInstances, ...newInstances],
+      activeVibe: vibe ?? null,
     }));
   }
 
@@ -839,6 +885,13 @@ export default function App({ entering = false }: { entering?: boolean }) {
       marble={state.marble}
       onGenerateRoom={handleGenerateFinalRoom}
       onCancelRun={handleCancelRun}
+      vibeLayoutProps={{
+        roomWidth: roomDimensions(state.room).width,
+        roomDepth: roomDimensions(state.room).depth,
+        existingInstances: state.furnitureInstances,
+        onBatchAdd: handleBatchAdd,
+        onPushUndo: handlePushUndo,
+      }}
       entering={entering}
     />
   );

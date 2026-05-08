@@ -1,0 +1,104 @@
+{
+  "prompt": "minimalist home office",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Desk\",\n    \"rationale\": \"A desk is a fundamental element in a minimalist home office, providing a dedicated workspace\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0,\n    \"z\": 2.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Chair\",\n    \"rationale\": \"An office chair complements the desk in a minimalist home office, promoting productivity and comfort\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.8,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"A table lamp provides focused lighting in a minimalist home office, minimizing clutter and visual noise\"\n  },\n  {\n    \"assetKey\": \"rugSmall\",\n    \"x\": 0,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Area Rug\",\n    \"rationale\": \"A small area rug adds warmth and texture to a minimalist home office, defining the workspace\"\n  },\n  {\n    \"assetKey\": \"plantSmall\",\n    \"x\": -1.2,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Small Plant\",\n    \"rationale\": \"A small plant introduces a touch of greenery to a minimalist home office, enhancing the aesthetic without cluttering the space\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.5,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Bookshelf\",\n    \"rationale\": \"A small bookshelf provides storage for essential items in a minimalist home office, maintaining a sense of simplicity and organization\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": -2.5,\n    \"z\": -1.5,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Reading Chair\",\n    \"rationale\": \"An armchair creates a cozy reading nook in a minimalist home office, offering a relaxed space for breaks and inspiration\"\n  },\n  {\n    \"assetKey\": \"lampFloor\",\n    \"x\": -2,\n    \"z\": -1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Floor Lamp\",\n    \"rationale\": \"A floor lamp provides ambient lighting in a minimalist home office, creating a warm and inviting atmosphere without overwhelming the space\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Desk\",\n    \"rationale\": \"A desk is a fundamental element in a minimalist home office, providing a dedicated workspace\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0,\n    \"z\": 2.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Chair\",\n    \"rationale\": \"An office chair complements the desk in a minimalist home office, promoting productivity and comfort\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.8,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"A table lamp provides focused lighting in a minimalist home office, minimizing clutter and visual noise\"\n  },\n  {\n    \"assetKey\": \"rugSmall\",\n    \"x\": 0,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Area Rug\",\n    \"rationale\": \"A small area rug adds warmth and texture to a minimalist home office, defining the workspace\"\n  },\n  {\n    \"assetKey\": \"plantSmall\",\n    \"x\": -1.2,\n    \"z\": 1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Small Plant\",\n    \"rationale\": \"A small plant introduces a touch of greenery to a minimalist home office, enhancing the aesthetic without cluttering the space\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.5,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Bookshelf\",\n    \"rationale\": \"A small bookshelf provides storage for essential items in a minimalist home office, maintaining a sense of simplicity and organization\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": -2.5,\n    \"z\": -1.5,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Reading Chair\",\n    \"rationale\": \"An armchair creates a cozy reading nook in a minimalist home office, offering a relaxed space for breaks and inspiration\"\n  },\n  {\n    \"assetKey\": \"lampFloor\",\n    \"x\": -2,\n    \"z\": -1.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Floor Lamp\",\n    \"rationale\": \"A floor lamp provides ambient lighting in a minimalist home office, creating a warm and inviting atmosphere without overwhelming the space\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDesk",
+      "x": 0,
+      "z": 1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "tableDesk",
+      "rationale": "A desk is a fundamental element in a minimalist home office, providing a dedicated workspace",
+      "assetId": "desk",
+      "assetName": "Desk",
+      "modelUrl": "/assets/furniture/desk.glb"
+    },
+    {
+      "assetKey": "chairOffice",
+      "x": 0,
+      "z": 2.5,
+      "rotationY": 180,
+      "scale": 1,
+      "label": "chairOffice",
+      "rationale": "An office chair complements the desk in a minimalist home office, promoting productivity and comfort",
+      "assetId": "chair-desk",
+      "assetName": "Chair Desk",
+      "modelUrl": "/assets/furniture/chairDesk.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": 0.8,
+      "z": 1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "lampTable",
+      "rationale": "A table lamp provides focused lighting in a minimalist home office, minimizing clutter and visual noise",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "rugSmall",
+      "x": 0,
+      "z": 1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "rugSmall",
+      "rationale": "A small area rug adds warmth and texture to a minimalist home office, defining the workspace",
+      "assetId": "rug-round",
+      "assetName": "Rug Round",
+      "modelUrl": "/assets/furniture/rugRound.glb"
+    },
+    {
+      "assetKey": "plantSmall",
+      "x": -1.2,
+      "z": 1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Small Plant",
+      "rationale": "A small plant introduces a touch of greenery to a minimalist home office, enhancing the aesthetic without cluttering the space",
+      "assetId": "plant-potted",
+      "assetName": "Plant Potted",
+      "modelUrl": "/assets/furniture/pottedPlant.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": 1.5,
+      "z": 0.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bookshelf",
+      "rationale": "A small bookshelf provides storage for essential items in a minimalist home office, maintaining a sense of simplicity and organization",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    },
+    {
+      "assetKey": "chairArmchair",
+      "x": -2.5,
+      "z": -1.5,
+      "rotationY": 45,
+      "scale": 1,
+      "label": "Reading Chair",
+      "rationale": "An armchair creates a cozy reading nook in a minimalist home office, offering a relaxed space for breaks and inspiration",
+      "assetId": "chair-cushion",
+      "assetName": "Chair Cushion",
+      "modelUrl": "/assets/furniture/chairCushion.glb"
+    },
+    {
+      "assetKey": "lampFloor",
+      "x": -2,
+      "z": -1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "lampFloor",
+      "rationale": "A floor lamp provides ambient lighting in a minimalist home office, creating a warm and inviting atmosphere without overwhelming the space",
+      "assetId": "lamp-floor",
+      "assetName": "Lamp Floor",
+      "modelUrl": "/assets/furniture/lampSquareFloor.glb"
+    }
+  ],
+  "timestamp": "2026-05-07T11:18:25.973Z"
+}

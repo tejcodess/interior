@@ -40,7 +40,12 @@ export type RoomBounds = {
 
 export type WallId = "north" | "south" | "east" | "west";
 
-export type FurnitureStatus = "mock" | "queued" | "generating" | "ready" | "failed";
+export type FurnitureStatus =
+  | "mock"
+  | "queued"
+  | "generating"
+  | "ready"
+  | "failed";
 
 export type FurnitureAsset = {
   id: string;
@@ -215,7 +220,13 @@ export type MarblePayload = {
 };
 
 export type MarbleResult = {
-  status: "idle" | "uploading" | "generating" | "complete" | "failed" | "disabled";
+  status:
+    | "idle"
+    | "uploading"
+    | "generating"
+    | "complete"
+    | "failed"
+    | "disabled";
   payload?: MarblePayload;
   operationId?: string;
   worldUrl?: string;
@@ -232,8 +243,43 @@ export type MarbleResult = {
   disabledMessage?: string;
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Vibe Auto-Layout types (shared between API route and client components)
+// ──────────────────────────────────────────────────────────────────────────────
+
+export type LayoutItem = {
+  /** Kenney asset key from the allowed list, e.g. "tableCoffee", "sofaDouble" */
+  assetKey: string;
+  /** Meters from room center on X axis */
+  x: number;
+  /** Meters from room center on Z axis */
+  z: number;
+  /** Rotation around Y axis in degrees, 0–360 */
+  rotationY: number;
+  /** Uniform scale, 0.5–2.0 */
+  scale: number;
+  /** Human-readable label, e.g. "Low coffee table" */
+  label: string;
+  /** One-sentence rationale for why this piece fits the vibe */
+  rationale: string;
+};
+
+export type ResolvedLayoutItem = LayoutItem & {
+  /** Manifest id, e.g. "table-coffee" */
+  assetId: string;
+  /** Human-readable asset name, e.g. "Table Coffee" */
+  assetName: string;
+  /** Absolute URL path to the GLB, e.g. "/assets/furniture/tableCoffee.glb" */
+  modelUrl: string;
+};
+
 export type CaptureImage = {
-  role: "layout-pano" | "scene-perspective" | "scene-front" | "scene-side" | "blueprint";
+  role:
+    | "layout-pano"
+    | "scene-perspective"
+    | "scene-front"
+    | "scene-side"
+    | "blueprint";
   dataUrl: string;
   isPano?: boolean;
   resolution?: { width: number; height: number };
@@ -260,5 +306,6 @@ export type EditorState = {
   activeShapeKind: ShapeKind;
   stylePrompt: string;
   marble: MarbleResult;
+  activeVibe: string | null;
   panels: Record<Exclude<PanelKey, "scene">, boolean>;
 };
