@@ -37,6 +37,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type RefObject,
   type ReactNode,
 } from "react";
 import * as THREE from "three";
@@ -84,6 +85,8 @@ import type {
 } from "../state/types";
 import { cn } from "../lib/cn";
 import { getDragAssetId } from "../state/dragAsset";
+import { WalkthroughUI } from "./WalkthroughUI";
+import { useWalkthrough } from "../hooks/useWalkthrough";
 
 type SceneViewProps = {
   room: RoomBounds;
@@ -672,6 +675,7 @@ export function SceneView(props: SceneViewProps) {
     : undefined;
   const objectSplatControlsVisible =
     generatedAvailable && splatOpacity > 0 && Boolean(selectedSplatRegion);
+  const xrPresenting = useXrPresentingExternal();
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
@@ -777,7 +781,7 @@ export function SceneView(props: SceneViewProps) {
           />
         </XR>
       </Canvas>
-      {wantsSplat && objectSplatControlsVisible ? (
+      {wantsSplat && objectSplatControlsVisible && !xrPresenting ? (
         <div className="absolute right-3 bottom-12 flex flex-col gap-1 rounded-md border border-[var(--border-mid)] bg-[#16181d] px-2 py-1 text-xs shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
           <div className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 font-medium text-[var(--text-bright)]">
@@ -885,6 +889,7 @@ function SceneContent({
   dragGhost?: { asset: FurnitureAsset; position: Vec3 };
 }) {
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
+  const wallGroupRef = useRef<THREE.Group>(null);
   const roomRef = useRef(room);
   const instancesRef = useRef(instances);
   const shapesRef = useRef(shapes);
@@ -915,6 +920,10 @@ function SceneContent({
   });
   const [hoveredWall, setHoveredWall] = useState<WallId | null>(null);
   const { camera, gl, scene } = useThree();
+  const { isWalkthrough, enterWalkthrough, exitWalkthrough } = useWalkthrough({
+    roomBounds: room,
+    wallGroup: wallGroupRef.current ?? undefined,
+  });
   // While a WebXR session is presenting, the headset drives the camera —
   // OrbitControls should be disabled but the FirstPersonController (keyboard
   // WASD) must remain active so desktop XR emulator sessions can still move.
@@ -922,7 +931,13 @@ function SceneContent({
   // FirstPersonController key listeners fire but produce zero delta (no keys
   // held), so both can safely coexist.
   const xrPresenting = useXR((state) => state.session != null);
-  const firstPersonControlsActive = firstPersonActive;
+  const walkthroughActive = isWalkthrough && viewMode === "blockout";
+  const firstPersonControlsActive = firstPersonActive || walkthroughActive;
+  useEffect(() => {
+    if (isWalkthrough && (viewMode !== "blockout" || xrPresenting)) {
+      exitWalkthrough();
+    }
+  }, [exitWalkthrough, isWalkthrough, viewMode, xrPresenting]);
   useEffect(() => {
     registerSceneCapture(() =>
       captureLayoutPano(scene, gl, roomRef.current, wallSegmentsRef.current),
@@ -3081,7 +3096,7 @@ function SceneContent({
         mouseButtons={VIEWPORT_MOUSE_BUTTONS}
         touches={VIEWPORT_TOUCHES}
       />
-      <FirstPersonController active={firstPersonControlsActive} />
+      <FirstPersonController active={firstPersonActive} />
       <VrSplatRig active={firstPersonActive && xrPresenting} />
       {generatedAvailable && marble.spzUrl ? (
         <MarbleSplatScene
@@ -3103,6 +3118,7 @@ function SceneContent({
           editable={viewMode === "blockout"}
           opacity={blockoutOpacity}
           tool={tool}
+          wallGroupRef={wallGroupRef}
           onReferenceSelect={() => onSelect(null)}
           onWallPointerDown={handleWallPointerDown}
           onWallPointerOver={setHoveredWall}
@@ -3328,6 +3344,15 @@ function SceneContent({
           />
         </Html>
       ) : null}
+      {viewMode === "blockout" && !xrPresenting ? (
+        <Html fullscreen zIndexRange={[40, 0]}>
+          <WalkthroughUI
+            isWalkthrough={walkthroughActive}
+            onEnter={enterWalkthrough}
+            onExit={exitWalkthrough}
+          />
+        </Html>
+      ) : null}
     </>
   );
 }
@@ -3340,6 +3365,7 @@ function BlockoutReferenceLayer({
   editable,
   opacity,
   tool,
+  wallGroupRef,
   onReferenceSelect,
   onWallPointerDown,
   onWallPointerOver,
@@ -3355,6 +3381,7 @@ function BlockoutReferenceLayer({
   editable: boolean;
   opacity: number;
   tool: ToolMode;
+  wallGroupRef?: RefObject<THREE.Group>;
   onReferenceSelect: () => void;
   onWallPointerDown: (wall: WallId, event: ThreeEvent<PointerEvent>) => void;
   onWallPointerOver: (wall: WallId) => void;
@@ -3375,6 +3402,7 @@ function BlockoutReferenceLayer({
 
   return (
     <group
+      ref={wallGroupRef}
       onPointerDown={
         editable
           ? undefined
@@ -3516,6 +3544,7 @@ function SegmentedWall({
           <SegmentMesh
             key={segment.id}
             wall={wall}
+            segmentId={segment.id}
             length={segmentLength}
             hitLength={rawLength}
             hitOffset={hitOffset}
@@ -3525,6 +3554,7 @@ function SegmentedWall({
             selected={segmentSelected || wallSelected}
             hovered={segmentHovered || wallHovered}
             highlightCursor={cursorActive}
+            color={segment.color}
             onPointerDown={
               editable
                 ? (event) => {
@@ -4428,7 +4458,9 @@ function FirstPersonController({ active }: { active: boolean }) {
       document.removeEventListener("keydown", handleKeyDown, { capture: true });
       document.removeEventListener("keyup", handleKeyUp, { capture: true });
       window.removeEventListener("blur", handleBlur);
-      element.removeEventListener("pointerdown", ensureFocus, { capture: true });
+      element.removeEventListener("pointerdown", ensureFocus, {
+        capture: true,
+      });
     };
   }, [active, gl.domElement]);
 
@@ -5573,12 +5605,10 @@ function formatControlNumber(value: number) {
 }
 
 /**
- * Subscribes the React tree to the module-level xrStore so DOM elements
- * rendered *outside* the <Canvas> (i.e. outside the <XR> provider, where
- * useXR() doesn't work) can still react to XR session state — for example,
- * to swap their hint copy or hide entirely while the user is in VR.
+ * Custom hook to check if WebXR session is active (outside XR context).
+ * Uses useSyncExternalStore to subscribe to the global xrStore state.
  */
-function useXrPresentingExternal() {
+function useXrPresentingExternal(): boolean {
   return useSyncExternalStore(
     (callback) => xrStore.subscribe(callback),
     () => xrStore.getState().session != null,
@@ -5597,7 +5627,6 @@ function SplatOverlayControls() {
     <SplatXrHint />
   ) : (
     <>
-      <EnterVrButton />
       <SplatWalkHint />
     </>
   );
@@ -5635,7 +5664,6 @@ function SplatXrHint() {
   );
 }
 
-
 function SplatWalkHint() {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit max-w-[90%] rounded-md border border-[var(--border-mid)] bg-[color-mix(in_srgb,#16181d_88%,transparent)] px-3 py-1.5 text-[11px] text-[var(--text-secondary)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] [backdrop-filter:blur(6px)]">
@@ -5645,87 +5673,6 @@ function SplatWalkHint() {
       <span className="mx-2 opacity-60">·</span>
       <span className="font-mono text-[var(--text-bright)]">Shift</span>
       <span className="ml-1">to sprint</span>
-    </div>
-  );
-}
-
-/**
- * Floating button that launches an immersive-vr WebXR session. Probes
- * `navigator.xr.isSessionSupported('immersive-vr')` once on mount and only
- * renders if the browser+device combo can actually present VR (so it stays
- * hidden on a desktop Chrome without an HMD, but appears on the Quest 3
- * browser). Clicking it calls `xrStore.enterVR()`, which negotiates the
- * session and hands the renderer's camera over to the headset.
- */
-function EnterVrButton() {
-  // Lazy initializer covers the SSR / no-WebXR cases up front so the effect
-  // below only runs the async support probe — keeps us on the right side of
-  // the React 19 "no setState in effects" lint rule.
-  const [supported, setSupported] = useState<boolean | null>(() => {
-    if (typeof navigator === "undefined") return false;
-    const xr = (navigator as Navigator & { xr?: XRSystem }).xr;
-    if (!xr || typeof xr.isSessionSupported !== "function") return false;
-    return null;
-  });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (supported !== null) return;
-    let cancelled = false;
-    const xr = (navigator as Navigator & { xr?: XRSystem }).xr;
-    if (!xr) return;
-    xr.isSessionSupported("immersive-vr")
-      .then((value) => {
-        if (!cancelled) setSupported(Boolean(value));
-      })
-      .catch(() => {
-        if (!cancelled) setSupported(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [supported]);
-
-  const handleEnter = useCallback(async () => {
-    setError(null);
-    setBusy(true);
-    try {
-      const result = await xrStore.enterVR();
-      if (!result) {
-        setError("Headset declined the session.");
-      }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to enter VR.");
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
-  // While `supported` is null we're still probing isSessionSupported(); show
-  // nothing so the button doesn't pop in/out. If the probe finished and
-  // there's no XR device, return null silently — no hint badge needed.
-  if (supported === null || !supported) return null;
-
-  return (
-    <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={handleEnter}
-        disabled={busy}
-        className="pointer-events-auto rounded-md border border-[var(--border-mid)] bg-[color-mix(in_srgb,#16181d_92%,transparent)] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--text-bright)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] [backdrop-filter:blur(6px)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-dim,#3a4250)_60%,#16181d)] disabled:cursor-not-allowed disabled:opacity-60"
-        title="Send the splat to your connected headset (Meta Quest Link, SteamVR, or native browser)"
-      >
-        {busy ? "Entering…" : "Enter VR"}
-      </button>
-      <div className="pointer-events-none text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)] opacity-80">
-        Quest Link · SteamVR
-      </div>
-      {error ? (
-        <div className="pointer-events-none rounded-sm bg-[color-mix(in_srgb,#16181d_92%,transparent)] px-2 py-1 text-[10px] text-[var(--color-warning,#f5a25d)] shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
-          {error}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -6537,6 +6484,7 @@ const WALL_HIT_PAD = 0.1;
 
 type SegmentMeshProps = {
   wall: WallId;
+  segmentId: string;
   length: number;
   hitLength: number;
   hitOffset: Vec3;
@@ -6546,6 +6494,7 @@ type SegmentMeshProps = {
   selected: boolean;
   hovered: boolean;
   highlightCursor: boolean;
+  color?: string;
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void;
   onPointerOver?: () => void;
   onPointerOut?: () => void;
@@ -6553,6 +6502,7 @@ type SegmentMeshProps = {
 
 function SegmentMesh({
   wall,
+  segmentId,
   length,
   hitLength,
   hitOffset,
@@ -6562,6 +6512,7 @@ function SegmentMesh({
   selected,
   hovered,
   highlightCursor,
+  color,
   onPointerDown,
   onPointerOver,
   onPointerOut,
@@ -6580,6 +6531,9 @@ function SegmentMesh({
     : [WALL_HIT_PAD, height, hitLength + 0.36];
   const highlighted = selected || hovered;
 
+  // Use custom color if provided, otherwise use default
+  const wallColor = color || SCENE_COLORS.wall;
+
   return (
     <group
       position={position}
@@ -6593,19 +6547,17 @@ function SegmentMesh({
             receiveShadow
             onPointerDown={onPointerDown}
             renderOrder={0}
-            userData={{ captureRole: "wall" }}
+            userData={{ captureRole: "wall", segmentId, wall }}
           >
             <boxGeometry args={visibleSize} />
             <meshStandardMaterial
-              color={selected ? SCENE_COLORS.wallSelected : SCENE_COLORS.wall}
-              transparent
-              opacity={(selected ? 0.92 : hovered ? 0.84 : 0.74) * opacity}
+              color={selected ? SCENE_COLORS.wallSelected : wallColor}
+              transparent={false}
+              opacity={1}
               roughness={0.62}
-              emissive={
-                highlighted ? SCENE_COLORS.wallSelected : SCENE_COLORS.wall
-              }
-              emissiveIntensity={selected ? 0.2 : hovered ? 0.1 : 0.05}
-              depthWrite={opacity >= 0.98}
+              emissive={highlighted ? SCENE_COLORS.wallSelected : "#000000"}
+              emissiveIntensity={selected ? 0.2 : hovered ? 0.1 : 0}
+              depthWrite={true}
             />
           </mesh>
           <mesh>
@@ -6618,8 +6570,8 @@ function SegmentMesh({
                   : SCENE_COLORS.wallEdge
               }
               wireframe
-              transparent
-              opacity={(selected ? 0.65 : hovered ? 0.5 : 0.34) * opacity}
+              transparent={false}
+              opacity={1}
               depthWrite={false}
             />
           </mesh>

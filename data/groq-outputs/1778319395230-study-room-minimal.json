@@ -1,0 +1,56 @@
+{
+  "prompt": "study room minimal",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Minimalist Office Desk\",\n    \"rationale\": \"A simple desk is essential for a study room minimal vibe, providing a dedicated space for focus and work.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"A comfortable and functional office chair supports the study room minimal vibe by promoting productivity and efficiency.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -0.8,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Compact Table Lamp\",\n    \"rationale\": \"A small table lamp provides focused lighting for a study room minimal space, minimizing distractions and promoting concentration.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 2,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Streamlined Bookshelf\",\n    \"rationale\": \"A compact bookshelf supports the study room minimal aesthetic by keeping essential books and materials within easy reach while maintaining a sense of openness and simplicity.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Minimalist Office Desk\",\n    \"rationale\": \"A simple desk is essential for a study room minimal vibe, providing a dedicated space for focus and work.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"A comfortable and functional office chair supports the study room minimal vibe by promoting productivity and efficiency.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -0.8,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Compact Table Lamp\",\n    \"rationale\": \"A small table lamp provides focused lighting for a study room minimal space, minimizing distractions and promoting concentration.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 2,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Streamlined Bookshelf\",\n    \"rationale\": \"A compact bookshelf supports the study room minimal aesthetic by keeping essential books and materials within easy reach while maintaining a sense of openness and simplicity.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDesk",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Minimalist Office Desk",
+      "rationale": "A simple desk is essential for a study room minimal vibe, providing a dedicated space for focus and work.",
+      "assetId": "desk",
+      "assetName": "Desk",
+      "modelUrl": "/assets/furniture/desk.glb"
+    },
+    {
+      "assetKey": "chairOffice",
+      "x": 0.8,
+      "z": -0.8,
+      "rotationY": -45,
+      "scale": 1,
+      "label": "Ergonomic Office Chair",
+      "rationale": "A comfortable and functional office chair supports the study room minimal vibe by promoting productivity and efficiency.",
+      "assetId": "chair-desk",
+      "assetName": "Chair Desk",
+      "modelUrl": "/assets/furniture/chairDesk.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": -0.8,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Compact Table Lamp",
+      "rationale": "A small table lamp provides focused lighting for a study room minimal space, minimizing distractions and promoting concentration.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": 2,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Streamlined Bookshelf",
+      "rationale": "A compact bookshelf supports the study room minimal aesthetic by keeping essential books and materials within easy reach while maintaining a sense of openness and simplicity.",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    }
+  ],
+  "timestamp": "2026-05-09T09:36:35.230Z"
+}

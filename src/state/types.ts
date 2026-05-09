@@ -150,6 +150,7 @@ export type WallSegment = {
   start: number;
   end: number;
   displacement: number;
+  color?: string;
 };
 
 export type WallSegmentation = Record<WallId, WallSegment[]>;
@@ -167,7 +168,7 @@ export type SelectedRef =
   | { type: "camera"; id: string }
   | { type: "door"; id: string }
   | { type: "window"; id: string }
-  | { type: "wall-segment"; wall: WallId; id: string }
+  | { type: "wall-segment"; wall: WallId; id: string; color?: string }
   | null;
 
 export type MarblePayload = {

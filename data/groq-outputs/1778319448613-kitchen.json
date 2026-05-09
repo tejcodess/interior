@@ -1,0 +1,56 @@
+{
+  "prompt": "kitchen",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDining\",\n    \"x\": 0.5,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Dining Table\",\n    \"rationale\": \"A dining table is central to a kitchen for food preparation and consumption, fitting the kitchen vibe.\"\n  },\n  {\n    \"assetKey\": \"chairDining\",\n    \"x\": 0.8,\n    \"z\": -0.6,\n    \"rotationY\": 90,\n    \"scale\": 1,\n    \"label\": \"Dining Chair\",\n    \"rationale\": \"Dining chairs surround the dining table in a kitchen to provide seating for meals, aligning with the kitchen vibe.\"\n  },\n  {\n    \"assetKey\": \"chairDining\",\n    \"x\": 0.8,\n    \"z\": 0.6,\n    \"rotationY\": 270,\n    \"scale\": 1,\n    \"label\": \"Dining Chair\",\n    \"rationale\": \"Multiple dining chairs are necessary in a kitchen setting to accommodate several people, matching the kitchen vibe.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.5,\n    \"z\": -1.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"A table lamp in a kitchen provides task lighting, which is essential for the kitchen vibe where food preparation occurs.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDining\",\n    \"x\": 0.5,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Dining Table\",\n    \"rationale\": \"A dining table is central to a kitchen for food preparation and consumption, fitting the kitchen vibe.\"\n  },\n  {\n    \"assetKey\": \"chairDining\",\n    \"x\": 0.8,\n    \"z\": -0.6,\n    \"rotationY\": 90,\n    \"scale\": 1,\n    \"label\": \"Dining Chair\",\n    \"rationale\": \"Dining chairs surround the dining table in a kitchen to provide seating for meals, aligning with the kitchen vibe.\"\n  },\n  {\n    \"assetKey\": \"chairDining\",\n    \"x\": 0.8,\n    \"z\": 0.6,\n    \"rotationY\": 270,\n    \"scale\": 1,\n    \"label\": \"Dining Chair\",\n    \"rationale\": \"Multiple dining chairs are necessary in a kitchen setting to accommodate several people, matching the kitchen vibe.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.5,\n    \"z\": -1.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"A table lamp in a kitchen provides task lighting, which is essential for the kitchen vibe where food preparation occurs.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDining",
+      "x": 0.5,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Dining Table",
+      "rationale": "A dining table is central to a kitchen for food preparation and consumption, fitting the kitchen vibe.",
+      "assetId": "table",
+      "assetName": "Table",
+      "modelUrl": "/assets/furniture/table.glb"
+    },
+    {
+      "assetKey": "chairDining",
+      "x": 0.8,
+      "z": -0.6,
+      "rotationY": -27,
+      "scale": 1,
+      "label": "Dining Chair",
+      "rationale": "Dining chairs surround the dining table in a kitchen to provide seating for meals, aligning with the kitchen vibe.",
+      "assetId": "chair",
+      "assetName": "Chair",
+      "modelUrl": "/assets/furniture/chair.glb"
+    },
+    {
+      "assetKey": "chairDining",
+      "x": 0.8,
+      "z": 0.6,
+      "rotationY": -153,
+      "scale": 1,
+      "label": "Dining Chair",
+      "rationale": "Multiple dining chairs are necessary in a kitchen setting to accommodate several people, matching the kitchen vibe.",
+      "assetId": "chair",
+      "assetName": "Chair",
+      "modelUrl": "/assets/furniture/chair.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": 0.5,
+      "z": -1.2,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "lampTable",
+      "rationale": "A table lamp in a kitchen provides task lighting, which is essential for the kitchen vibe where food preparation occurs.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    }
+  ],
+  "timestamp": "2026-05-09T09:37:28.613Z"
+}
