@@ -40,6 +40,7 @@ import type {
   FurnitureAsset,
   FurnitureInstance,
   LibraryEntry,
+  WallId,
 } from "./state/types";
 
 export default function App({ entering = false }: { entering?: boolean }) {
@@ -48,12 +49,16 @@ export default function App({ entering = false }: { entering?: boolean }) {
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [savingAssetId, setSavingAssetId] = useState<string | null>(null);
   const [selectedWallSegment, setSelectedWallSegment] = useState<{
-    wall: string;
+    wall: WallId;
     segmentId: string;
     isWholeWall?: boolean;
   } | null>(null);
+  const [wallPalettePosition, setWallPalettePosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   // Undo stack — each entry is a snapshot of furnitureInstances before a batch
-  const [undoStack, setUndoStack] = useState<FurnitureInstance[][]>([]);
+  const [_undoStack, setUndoStack] = useState<FurnitureInstance[][]>([]);
   const sceneCaptureRef = useRef<() => CaptureImage | undefined>(
     () => undefined,
   );
@@ -109,6 +114,12 @@ export default function App({ entering = false }: { entering?: boolean }) {
             selected: null,
           };
         });
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setSelectedWallSegment(null);
+        setWallPalettePosition(null);
         return;
       }
 
@@ -670,10 +681,25 @@ export default function App({ entering = false }: { entering?: boolean }) {
             []
           ).map((seg) =>
             // If whole-wall paint: color every segment; otherwise just the target segment
-            isWholeWall || seg.id === segmentId ? { ...seg, color } : seg
+            isWholeWall || seg.id === segmentId ? { ...seg, color } : seg,
           ),
         },
       }));
+    },
+    [],
+  );
+
+  const openWallPalette = useCallback(
+    (
+      target: {
+        wall: WallId;
+        segmentId: string;
+        isWholeWall?: boolean;
+      },
+      position: { x: number; y: number },
+    ) => {
+      setSelectedWallSegment(target);
+      setWallPalettePosition(position);
     },
     [],
   );
@@ -682,24 +708,8 @@ export default function App({ entering = false }: { entering?: boolean }) {
     selected,
   ) => {
     setState((current) => ({ ...current, selected }));
-    // Open color palette when a wall or wall-segment is selected
-    if (selected?.type === "wall-segment") {
-      setSelectedWallSegment({
-        wall: selected.wall,
-        segmentId: selected.id,
-        isWholeWall: false,
-      });
-    } else if (selected?.type === "wall") {
-      // Plain wall click — use the first segment id as a representative;
-      // the update handler will paint ALL segments when isWholeWall is true
-      setSelectedWallSegment({
-        wall: selected.id,
-        segmentId: "__whole_wall__",
-        isWholeWall: true,
-      });
-    } else {
-      setSelectedWallSegment(null);
-    }
+    setSelectedWallSegment(null);
+    setWallPalettePosition(null);
   };
   const setTool: React.ComponentProps<typeof SceneView>["onToolChange"] = (
     tool,
@@ -838,6 +848,7 @@ export default function App({ entering = false }: { entering?: boolean }) {
             onToolChange={setTool}
             registerSceneCapture={registerSceneCapture}
             onAssetMeasured={handleAssetMeasured}
+            onWallContextMenu={openWallPalette}
           />
         }
         blueprint={
@@ -951,7 +962,8 @@ export default function App({ entering = false }: { entering?: boolean }) {
                 ]?.[0]?.color
               : state.wallSegments[
                   selectedWallSegment.wall as keyof typeof state.wallSegments
-                ]?.find((seg) => seg.id === selectedWallSegment.segmentId)?.color
+                ]?.find((seg) => seg.id === selectedWallSegment.segmentId)
+                  ?.color
           }
           onColorSelect={(color) => {
             updateWallSegmentColor(
@@ -961,8 +973,12 @@ export default function App({ entering = false }: { entering?: boolean }) {
               selectedWallSegment.isWholeWall,
             );
           }}
-          onClose={() => setSelectedWallSegment(null)}
+          onClose={() => {
+            setSelectedWallSegment(null);
+            setWallPalettePosition(null);
+          }}
           wallInfo={`${selectedWallSegment.wall} wall`}
+          position={wallPalettePosition ?? undefined}
         />
       )}
     </>

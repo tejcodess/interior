@@ -115,6 +115,15 @@ type SceneViewProps = {
   onSelect: (selected: SelectedRef) => void;
   onToolChange: (tool: ToolMode) => void;
   registerSceneCapture: (capture: () => CaptureImage | undefined) => void;
+  onWallContextMenu?: (
+    target: {
+      wall: WallId;
+      segmentId: string;
+      isWholeWall?: boolean;
+    },
+    clientX: number,
+    clientY: number,
+  ) => void;
   onAssetMeasured?: (
     assetId: string,
     footprint: { width: number; depth: number; height: number },
@@ -862,6 +871,7 @@ function SceneContent({
   onSelect,
   onToolChange,
   registerSceneCapture,
+  onWallContextMenu,
   onAssetMeasured,
   marble,
   viewMode,
@@ -3128,6 +3138,7 @@ function SceneContent({
           onFloorPointerDown={handleFloorPointerDown}
           onSegmentPointerDown={handleSegmentPointerDown}
           onConnectorPointerDown={handleConnectorPointerDown}
+          onWallContextMenu={onWallContextMenu}
         />
         {instances.map((instance) => {
           const asset =
@@ -3373,6 +3384,7 @@ function BlockoutReferenceLayer({
   onFloorPointerDown,
   onSegmentPointerDown,
   onConnectorPointerDown,
+  onWallContextMenu,
 }: {
   room: RoomBounds;
   wallSegments: WallSegmentation;
@@ -3381,7 +3393,7 @@ function BlockoutReferenceLayer({
   editable: boolean;
   opacity: number;
   tool: ToolMode;
-  wallGroupRef?: RefObject<THREE.Group>;
+  wallGroupRef?: RefObject<THREE.Group | null>;
   onReferenceSelect: () => void;
   onWallPointerDown: (wall: WallId, event: ThreeEvent<PointerEvent>) => void;
   onWallPointerOver: (wall: WallId) => void;
@@ -3395,6 +3407,15 @@ function BlockoutReferenceLayer({
   onConnectorPointerDown: (
     connector: WallConnectorRef,
     event: ThreeEvent<PointerEvent>,
+  ) => void;
+  onWallContextMenu?: (
+    target: {
+      wall: WallId;
+      segmentId: string;
+      isWholeWall?: boolean;
+    },
+    clientX: number,
+    clientY: number,
   ) => void;
 }) {
   const gridCellColor = fadeSceneColor(SCENE_COLORS.gridCell, opacity);
@@ -3448,6 +3469,7 @@ function BlockoutReferenceLayer({
           onWallPointerOut={onWallPointerOut}
           onSegmentPointerDown={onSegmentPointerDown}
           onConnectorPointerDown={onConnectorPointerDown}
+          onWallContextMenu={onWallContextMenu}
         />
       ))}
     </group>
@@ -3476,6 +3498,15 @@ type SegmentedWallProps = {
     connector: WallConnectorRef,
     event: ThreeEvent<PointerEvent>,
   ) => void;
+  onWallContextMenu?: (
+    target: {
+      wall: WallId;
+      segmentId: string;
+      isWholeWall?: boolean;
+    },
+    clientX: number,
+    clientY: number,
+  ) => void;
 };
 
 function SegmentedWall({
@@ -3493,6 +3524,7 @@ function SegmentedWall({
   onWallPointerOut,
   onSegmentPointerDown,
   onConnectorPointerDown,
+  onWallContextMenu,
 }: SegmentedWallProps) {
   const wallSelected =
     editable && selected?.type === "wall" && selected.id === wall;
@@ -3558,6 +3590,7 @@ function SegmentedWall({
             onPointerDown={
               editable
                 ? (event) => {
+                    if (event.button !== 0) return;
                     if (
                       segments.length === 1 &&
                       segment.displacement === 0 &&
@@ -3572,6 +3605,39 @@ function SegmentedWall({
             }
             onPointerOver={editable ? () => onWallPointerOver(wall) : undefined}
             onPointerOut={editable ? () => onWallPointerOut(wall) : undefined}
+            onContextMenu={
+              editable && onWallContextMenu
+                ? (event) => {
+                    event.stopPropagation();
+                    event.nativeEvent.preventDefault();
+                    if (
+                      segments.length === 1 &&
+                      segment.displacement === 0 &&
+                      tool !== "cut-wall"
+                    ) {
+                      onWallContextMenu(
+                        {
+                          wall,
+                          segmentId: "__whole_wall__",
+                          isWholeWall: true,
+                        },
+                        event.clientX,
+                        event.clientY,
+                      );
+                      return;
+                    }
+                    onWallContextMenu(
+                      {
+                        wall,
+                        segmentId: segment.id,
+                        isWholeWall: false,
+                      },
+                      event.clientX,
+                      event.clientY,
+                    );
+                  }
+                : undefined
+            }
           />
         );
       })}
@@ -6498,6 +6564,7 @@ type SegmentMeshProps = {
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void;
   onPointerOver?: () => void;
   onPointerOut?: () => void;
+  onContextMenu?: (event: ThreeEvent<PointerEvent>) => void;
 };
 
 function SegmentMesh({
@@ -6516,6 +6583,7 @@ function SegmentMesh({
   onPointerDown,
   onPointerOver,
   onPointerOut,
+  onContextMenu,
 }: SegmentMeshProps) {
   const isHorizontal = wall === "north" || wall === "south";
   const visibleSize: Vec3 = isHorizontal
@@ -6539,6 +6607,7 @@ function SegmentMesh({
       position={position}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
+      onContextMenu={onContextMenu}
     >
       {length >= 0.02 ? (
         <>

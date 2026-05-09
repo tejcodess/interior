@@ -46,6 +46,9 @@ export function useWalkthrough(options: UseWalkthroughOptions) {
         sprintMultiplier: 1.5,
         mouseSensitivity: 0.003,
       },
+      {
+        onExit: () => setIsWalkthrough(false),
+      },
     );
 
     controllerRef.current = controller;
@@ -80,17 +83,14 @@ export function useWalkthrough(options: UseWalkthroughOptions) {
   };
 
   const exitWalkthrough = () => {
-    if (controllerRef.current && controllerRef.current.getIsActive()) {
-      controllerRef.current.exit();
-      setIsWalkthrough(false);
-    }
+    controllerRef.current?.exit();
+    setIsWalkthrough(false);
   };
 
   return {
     isWalkthrough,
     enterWalkthrough,
     exitWalkthrough,
-    controller: controllerRef.current,
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 const PRESET_COLORS = [
@@ -26,6 +26,10 @@ type WallColorPaletteProps = {
   onColorSelect: (hex: string) => void;
   onClose: () => void;
   wallInfo?: string;
+  position?: {
+    x: number;
+    y: number;
+  };
 };
 
 export function WallColorPalette({
@@ -33,8 +37,13 @@ export function WallColorPalette({
   onColorSelect,
   onClose,
   wallInfo,
+  position,
 }: WallColorPaletteProps) {
   const [customColor, setCustomColor] = useState(selectedColor || "#B8C2CC");
+
+  useEffect(() => {
+    setCustomColor(selectedColor || "#B8C2CC");
+  }, [selectedColor]);
 
   const handleColorClick = useCallback(
     (hex: string) => {
@@ -61,75 +70,81 @@ export function WallColorPalette({
   }, [customColor, onColorSelect, onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-[9998]"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[9998]" onClick={onClose}>
       <div
-        className="fixed left-1/2 top-1/2 z-[9999] w-80 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-gray-300 bg-white p-4 shadow-2xl"
+        className={`fixed z-[9999] w-[19rem] max-w-[calc(100vw-1.5rem)] rounded-xl border border-[var(--border-mid)] bg-[color-mix(in_srgb,var(--surface-raised)_96%,transparent)] p-3 text-[var(--text-primary)] shadow-[0_18px_48px_rgba(0,0,0,0.45)] backdrop-blur-md ${
+          position ? "" : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        }`}
+        style={position ? { left: position.x, top: position.y } : undefined}
         onClick={(e) => e.stopPropagation()}
       >
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">
-          {wallInfo ? `Paint ${wallInfo}` : "Paint Wall"}
-        </h3>
-        <button
-          onClick={onClose}
-          className="rounded p-1 hover:bg-gray-100"
-          title="Close"
-        >
-          <X size={16} className="text-gray-600" />
-        </button>
-      </div>
-
-      <div className="mb-4 grid grid-cols-4 gap-2">
-        {PRESET_COLORS.map((color) =>
-          color.hex ? (
-            <button
-              key={color.hex}
-              onClick={() => handleColorClick(color.hex)}
-              className={`rounded border-2 transition-all ${
-                selectedColor === color.hex
-                  ? "border-blue-500 shadow-md"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              style={{ backgroundColor: color.hex, height: "40px" }}
-              title={color.name}
-            />
-          ) : null,
-        )}
-      </div>
-
-      <div className="mb-3 flex flex-col gap-2">
-        <label className="text-xs font-medium text-gray-700">
-          Custom Color:
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={customColor}
-            onChange={handleCustomColorChange}
-            className="h-10 w-16 cursor-pointer rounded border border-gray-200"
-          />
-          <input
-            type="text"
-            value={customColor}
-            onChange={handleCustomColorChange}
-            className="flex-1 rounded border border-gray-200 px-2 py-2 text-xs font-mono"
-            placeholder="#B8C2CC"
-          />
+        <div className="mb-3 flex items-start justify-between gap-3 border-b border-[var(--border-dim)] pb-2">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold tracking-wide text-[var(--text-bright)]">
+              {wallInfo ? `Paint ${wallInfo}` : "Paint Wall"}
+            </h3>
+            <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+              Right-click a wall to change its finish.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--border-dim)] bg-[var(--surface-input)] text-[var(--text-secondary)] transition-colors hover:border-[var(--border-mid)] hover:bg-[var(--surface-overlay)] hover:text-[var(--text-primary)]"
+            title="Close"
+          >
+            <X size={14} />
+          </button>
         </div>
-        <button
-          onClick={handleApplyCustom}
-          className="rounded bg-blue-500 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-600"
-        >
-          Apply Custom
-        </button>
-      </div>
 
-      <div className="text-xs text-gray-500">
-        Click a color to apply, or use custom picker above.
-      </div>
+        <div className="mb-3 grid grid-cols-4 gap-2">
+          {PRESET_COLORS.map((color) =>
+            color.hex ? (
+              <button
+                key={`${color.name}-${color.hex}`}
+                onClick={() => handleColorClick(color.hex)}
+                className={`h-10 rounded-lg border transition-all duration-150 ${
+                  selectedColor === color.hex
+                    ? "border-[var(--accent-border)] shadow-[0_0_0_1px_var(--accent-border),0_10px_18px_rgba(0,0,0,0.22)]"
+                    : "border-[var(--border-dim)] hover:border-[var(--border-mid)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.16)]"
+                }`}
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+              />
+            ) : null,
+          )}
+        </div>
+
+        <div className="mb-3 flex flex-col gap-2">
+          <label className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+            Custom Color
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="color"
+              value={customColor}
+              onChange={handleCustomColorChange}
+              className="h-10 w-12 cursor-pointer rounded-md border border-[var(--border-dim)] bg-[var(--surface-input)]"
+            />
+            <input
+              type="text"
+              value={customColor}
+              onChange={handleCustomColorChange}
+              className="flex-1 rounded-md border border-[var(--border-dim)] bg-[var(--surface-input)] px-2 py-2 text-xs font-mono text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-secondary)] focus:border-[var(--border-mid)]"
+              placeholder="#B8C2CC"
+            />
+          </div>
+          <button
+            onClick={handleApplyCustom}
+            className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-dim)] px-3 py-2 text-xs font-medium text-[var(--accent-text)] transition-colors hover:bg-[var(--surface-active)]"
+          >
+            Apply Custom
+          </button>
+        </div>
+
+        <div className="text-[11px] leading-4 text-[var(--text-secondary)]">
+          Click a swatch to apply it immediately, or use the custom picker for a
+          precise finish.
+        </div>
       </div>
     </div>
   );

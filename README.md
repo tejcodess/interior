@@ -1,10 +1,10 @@
-# INTER
+# BUILD ARENA
 
-INTER is an AI-assisted 3D interior design studio for moving quickly from an idea for a room to an explorable spatial concept. It gives designers and everyday users a compact workspace for planning, decorating, and reimagining interiors without jumping between moodboards, modeling tools, and floor-plan software.
+BUILD ARENA is an AI-assisted 3D interior design studio for moving quickly from an idea for a room to an explorable spatial concept. It gives designers and everyday users a compact workspace for planning, decorating, and reimagining interiors without jumping between moodboards, modeling tools, and floor-plan software.
 
 ## What It Does
 
-INTER lets users define and edit a room, add architectural details, generate furniture from text, and view the result as both a 3D blockout and a synchronized 2D blueprint.
+BUILD ARENA lets users define and edit a room, add architectural details, generate furniture from text, and view the result as both a 3D blockout and a synchronized 2D blueprint.
 
 Core capabilities include:
 
@@ -20,11 +20,18 @@ Core capabilities include:
 - WebXR entry for exploring generated splat worlds in a headset when supported.
 - A companion Unity Quest capture project under `quest-capture/` for headset-based room capture and export workflows.
 
+Current room-editing flow highlights:
+
+- Enter Room mode for a focused first-person walkthrough of the blockout.
+- Press `Esc` to leave the room POV and return to the editable editor chrome.
+- Right-click walls or wall segments to open the wall color palette near the selected surface.
+- The wall color picker now follows the selected wall and can be dismissed with `Esc` or the close button.
+
 The goal is to make early interior design exploration feel fast, spatial, and directly editable: generate ideas with AI, then refine them by moving through the room and manipulating objects yourself.
 
 ## Tech Stack
 
-INTER is built with:
+BUILD ARENA is built with:
 
 - Next.js
 - React
@@ -43,46 +50,52 @@ The editor is driven by shared application state for rooms, furniture assets, fu
 
 ## AI Pipeline
 
-INTER combines multiple AI systems so users can move between text, imagery, 3D furniture, and immersive room visualization.
+BUILD ARENA combines multiple AI systems so users can move between text, imagery, 3D furniture, and immersive room visualization.
 
 ### Text-to-3D Furniture
 
-Users describe a furniture object in natural language. INTER uses tag-based matching with Groq keyword extraction to instantly find the best-matching furniture from a local Kenney asset library (35+ pre-modeled GLB items). Generated assets can be placed in the room, saved to the local library, reused, uploaded, or combined with manually imported models.
+Users describe a furniture object in natural language. BUILD ARENA uses tag-based matching with Groq keyword extraction to instantly find the best-matching furniture from a local Kenney asset library (40+ pre-modeled GLB items). Generated assets can be placed in the room, saved to the local library, reused, uploaded, or combined with manually imported models.
 
 ### Design Reasoning
 
-Groq's llama-3.3-70b-versatile model provides INTER's design reasoning layer. It helps interpret user intent, extract keywords for furniture matching, estimate real-world furniture dimensions, and provide structured guidance for downstream generation steps. Running this layer through Groq gives the project zero-cost access to powerful reasoning without self-hosting infrastructure.
+Groq's llama-3.3-70b-versatile model provides BUILD ARENA's design reasoning layer. It helps interpret user intent, extract keywords for furniture matching, estimate real-world furniture dimensions, and provide structured guidance for downstream generation steps. Running this layer through Groq gives the project zero-cost access to powerful reasoning without self-hosting infrastructure.
 
 ### Visual Understanding
 
-Google Cloud Vision API is used to analyze room imagery before final scene generation. Object detection identifies major furniture and room elements, while depth map information and normal map cues help the system reason about spatial layout, surface orientation, walls, floors, and large objects. This grounds the room-to-world workflow in the real space instead of treating it as a purely image-based transformation.
+Room image analysis is wired for Gemini 2.5 Flash and tracked as a ready pipeline for future room-understanding workflows. The intended flow is to combine object and layout cues so the room-to-world pipeline can reason about spatial structure instead of treating a capture as a purely image-based input.
 
 ### Product Search
 
-Users can search for real furniture and decor products directly from the left-side product panel. INTER queries SerpAPI's eBay engine through a local Next.js API route and displays product cards with title, price, seller, shipping, thumbnail, and outbound listing links.
+Users can search for real furniture and decor products directly from the left-side product panel. BUILD ARENA queries SerpAPI's eBay engine through a local Next.js API route and displays product cards with title, price, seller, shipping, thumbnail, and outbound listing links.
 
 ### Room to World
 
-INTER supports a room-to-world pipeline where a room capture and design prompt are sent through the World Labs Marble API route. The result can be loaded as an immersive Gaussian splat so users can compare the editable blockout against a generated spatial concept. Image generation provides style and atmosphere; Gaussian splats make the output feel present and walkable.
+BUILD ARENA supports a room-to-world pipeline where a room capture and design prompt are sent through the World Labs Marble API route. The result can be loaded as an immersive Gaussian splat so users can compare the editable blockout against a generated spatial concept. Image generation provides style and atmosphere; Gaussian splats make the output feel present and walkable.
+
+### Room Walkthrough and Wall Styling
+
+The editor also includes a room walkthrough mode for inspecting the blockout from a first-person point of view. It uses pointer lock and keyboard movement for a lightweight room-preview experience, with Escape used as the fastest way to return to the normal editor UI.
+
+Walls can be recolored directly in the scene through a context-menu driven palette, which keeps the styling workflow close to the surface being edited and avoids switching away from the viewport.
 
 ## Free API Migration
 
-INTER was originally built on paid APIs (Meshy for 3D generation, Vultr SSH for Gemma reasoning, World Labs for immersive views). We migrated to a zero-cost stack:
+BUILD ARENA was originally built on paid APIs (Meshy for 3D generation, Vultr SSH for Gemma reasoning, World Labs for immersive views). We migrated to a zero-cost stack:
 
-| Feature | Old | New | Status |
-|---------|-----|-----|--------|
-| **Furniture Generation** | Meshy API | Local Kenney library + Groq matching | ✅ Live |
-| **Design Reasoning** | Vultr SSH + Gemma | Groq llama-3.3-70b-versatile | ✅ Live |
-| **Keyword Extraction** | N/A | Groq API | ✅ Live |
-| **Product Search** | N/A | SerpAPI (100 free/month) | ✅ Live |
-| **Room Image Analysis** | Google Cloud Vision | Gemini 2.5 Flash (free) | 📋 Ready |
-| **Immersive Views** | World Labs Marble | Coming Soon (graceful degradation) | ⏳ Pending |
+| Feature                  | Old                 | New                                  | Status     |
+| ------------------------ | ------------------- | ------------------------------------ | ---------- |
+| **Furniture Generation** | Meshy API           | Local Kenney library + Groq matching | ✅ Live    |
+| **Design Reasoning**     | Vultr SSH + Gemma   | Groq llama-3.3-70b-versatile         | ✅ Live    |
+| **Keyword Extraction**   | N/A                 | Groq API                             | ✅ Live    |
+| **Product Search**       | N/A                 | SerpAPI (100 free/month)             | ✅ Live    |
+| **Room Image Analysis**  | Google Cloud Vision | Gemini 2.5 Flash pipeline            | 📋 Ready   |
+| **Immersive Views**      | World Labs Marble   | Coming Soon (graceful degradation)   | ⏳ Pending |
 
-**Result:** INTER now runs on the free tier of three APIs (Groq, SerpAPI, Gemini) + a local 40-asset Kenney library. **Total cost: $0/month.**
+**Result:** BUILD ARENA now runs on the free tier of three APIs (Groq, SerpAPI, Gemini) + a local 40-asset Kenney library. **Total cost: $0/month.**
 
 ### How Furniture Matching Works
 
-When a user enters a furniture prompt like *"round walnut coffee table"*:
+When a user enters a furniture prompt like _"round walnut coffee table"_:
 
 1. The prompt is sent to the `/api/furniture-match` endpoint
 2. **Groq extracts keywords:** `["round", "walnut", "coffee table"]`
@@ -136,19 +149,18 @@ npm run dev
 pnpm dev
 ```
 
-Open the app at: **http://localhost:3000**
+Open the app at: **http://localhost:3001**
 
 ### Zero-Cost Operation
 
-INTER runs entirely on free APIs:
+BUILD ARENA runs entirely on free APIs:
 
 - **Groq** (free tier): Powers furniture matching, design reasoning, and keyword extraction
 - **SerpAPI** (100 searches/month free): Product search feature
 - **Kenney Furniture Library** (local assets): 40+ pre-modeled GLB items for instant generation
-- **Gemini 2.5 Flash** (optional, free): Room image analysis (prepared for future use)
+- **Gemini 2.5 Flash** (optional, free): Room image analysis pipeline (ready for future use)
 
 No Meshy, Vultr SSH, or World Labs APIs needed — all paid services have been replaced with free alternatives or local solutions.
-
 
 ## Quest Capture Project
 
@@ -182,13 +194,14 @@ quest-capture/
 
 ## Challenges
 
-The hardest parts of INTER are the pieces between generation and usability:
+The hardest parts of BUILD ARENA are the pieces between generation and usability:
 
 - **Keeping the 2D blueprint and 3D scene synchronized** — two views must react to the same state changes instantly
 - **Maintaining real-world scale for generated furniture** — LLMs estimate dimension ranges; we use Groq to normalize these to believable meters
 - **Making generated and uploaded assets behave like editable design objects** — must support rotation, scaling, deletion, library persistence, and drag-and-drop
 - **Managing instant furniture matching** — tag-based scoring balances matching quality with real-time responsiveness
 - **Building a panoramic-to-Gaussian-splat workflow** — preserves the feel of a real room while enabling AI reinterpretation
+- **Keeping immersive controls and editor chrome in sync** — Escape, pointer lock, and floating palettes must cleanly return control to the rest of the UI
 - **Operating at zero cost** — replaced all paid APIs (Meshy, Vultr SSH, World Labs) with free alternatives or local solutions
 
 ## What We Learned
@@ -204,10 +217,11 @@ Free APIs are powerful enough for production use. Groq's reasoning model, SerpAP
 
 ## What's Next
 
-Next steps for INTER include:
+Next steps for BUILD ARENA include:
 
 - Room scanning and better measurement tools.
 - Richer material and style controls.
+- More polished walkthrough affordances and scene interaction hints.
 - Multiplayer design sessions.
 - Exportable floor plans.
 - More realistic final renders.

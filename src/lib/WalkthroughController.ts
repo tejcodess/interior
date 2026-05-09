@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { RoomBounds, Vec3, WallId } from "../state/types";
+import type { RoomBounds } from "../state/types";
 
 /**
  * Configuration for the walkthrough controller
@@ -15,6 +15,10 @@ interface WalkthroughConfig {
   sprintMultiplier: number;
   /** Mouse sensitivity for look rotation */
   mouseSensitivity: number;
+}
+
+interface WalkthroughCallbacks {
+  onExit?: () => void;
 }
 
 /**
@@ -40,6 +44,7 @@ export class WalkthroughController {
   private wallMeshes: THREE.Mesh[];
 
   private config: WalkthroughConfig;
+  private callbacks: WalkthroughCallbacks;
   private inputState: InputState = {
     forward: false,
     backward: false,
@@ -74,6 +79,7 @@ export class WalkthroughController {
     roomBounds: RoomBounds,
     wallMeshes: THREE.Mesh[],
     config: Partial<WalkthroughConfig> = {},
+    callbacks: WalkthroughCallbacks = {},
   ) {
     this.scene = scene;
     this.camera = camera;
@@ -88,6 +94,7 @@ export class WalkthroughController {
       sprintMultiplier: config.sprintMultiplier ?? 1.5,
       mouseSensitivity: config.mouseSensitivity ?? 0.003,
     };
+    this.callbacks = callbacks;
 
     this.setupEventListeners();
   }
@@ -147,6 +154,8 @@ export class WalkthroughController {
     // Restore camera to original position
     this.camera.position.copy(this.cameraStartPosition);
     this.camera.quaternion.set(0, 0, 0, 1);
+
+    this.callbacks.onExit?.();
   }
 
   /**
@@ -487,6 +496,7 @@ export function createWalkthroughController(
   roomBounds: RoomBounds,
   wallGroup: THREE.Group | undefined,
   config?: Partial<WalkthroughConfig>,
+  callbacks?: WalkthroughCallbacks,
 ): WalkthroughController {
   const wallMeshes: THREE.Mesh[] = [];
 
@@ -505,5 +515,6 @@ export function createWalkthroughController(
     roomBounds,
     wallMeshes,
     config,
+    callbacks,
   );
 }
