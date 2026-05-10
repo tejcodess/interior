@@ -1,9 +1,24 @@
 "use client";
 
-import { ExternalLink, Minus, PackageSearch, Search, ShoppingBag, Star } from "lucide-react";
+import {
+  ExternalLink,
+  Minus,
+  PackageSearch,
+  Search,
+  ShoppingBag,
+  Star,
+} from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { searchEbayProducts, type EbayProductResult } from "../api/products";
-import type { FurnitureAsset, FurnitureAssetMap, FurnitureInstance, LibraryEntry } from "../state/types";
+import {
+  searchAmazonProducts,
+  type AmazonProductResult,
+} from "../api/products";
+import type {
+  FurnitureAsset,
+  FurnitureAssetMap,
+  FurnitureInstance,
+  LibraryEntry,
+} from "../state/types";
 
 type ProductSearchPanelProps = {
   open: boolean;
@@ -35,8 +50,10 @@ export function ProductSearchPanel({
   );
   const [inputValue, setInputValue] = useState("");
   const [activeQueryId, setActiveQueryId] = useState<string | null>(null);
-  const [results, setResults] = useState<EbayProductResult[]>([]);
-  const [totalResults, setTotalResults] = useState<number | undefined>(undefined);
+  const [results, setResults] = useState<AmazonProductResult[]>([]);
+  const [totalResults, setTotalResults] = useState<number | undefined>(
+    undefined,
+  );
   const [searchedQuery, setSearchedQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,12 +65,16 @@ export function ProductSearchPanel({
     setLoading(true);
     setError(null);
     try {
-      const response = await searchEbayProducts(trimmed);
+      const response = await searchAmazonProducts(trimmed);
       setResults(response.results);
       setTotalResults(response.totalResults);
       setSearchedQuery(response.query);
     } catch (searchError) {
-      setError(searchError instanceof Error ? searchError.message : "Product search failed.");
+      setError(
+        searchError instanceof Error
+          ? searchError.message
+          : "Product search failed.",
+      );
       setResults([]);
       setTotalResults(undefined);
       setSearchedQuery(trimmed);
@@ -84,7 +105,8 @@ export function ProductSearchPanel({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        transition: "width 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease",
+        transition:
+          "width 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease",
         zIndex: 15,
       }}
     >
@@ -120,7 +142,13 @@ export function ProductSearchPanel({
         </PanelIconBtn>
       </div>
 
-      <div style={{ padding: "12px", flexShrink: 0, borderBottom: "1px solid var(--border-dim)" }}>
+      <div
+        style={{
+          padding: "12px",
+          flexShrink: 0,
+          borderBottom: "1px solid var(--border-dim)",
+        }}
+      >
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -135,7 +163,7 @@ export function ProductSearchPanel({
               setInputValue(event.target.value);
               setActiveQueryId(null);
             }}
-            placeholder="Search eBay furniture"
+            placeholder="Search Amazon furniture"
             style={{
               height: 34,
               minWidth: 0,
@@ -153,14 +181,20 @@ export function ProductSearchPanel({
           <button
             type="submit"
             disabled={!inputValue.trim() || loading}
-            aria-label="Search eBay products"
-            title="Search eBay products"
+            aria-label="Search Amazon products"
+            title="Search Amazon products"
             style={{
               height: 34,
               borderRadius: 4,
               border: "1px solid var(--border-dim)",
-              background: inputValue.trim() && !loading ? "var(--surface-input)" : "transparent",
-              color: inputValue.trim() && !loading ? "var(--accent-text)" : "var(--text-ghost)",
+              background:
+                inputValue.trim() && !loading
+                  ? "var(--surface-input)"
+                  : "transparent",
+              color:
+                inputValue.trim() && !loading
+                  ? "var(--accent-text)"
+                  : "var(--text-ghost)",
               display: "grid",
               placeItems: "center",
               cursor: inputValue.trim() && !loading ? "pointer" : "not-allowed",
@@ -181,7 +215,13 @@ export function ProductSearchPanel({
           }}
         >
           {queries.length === 0 ? (
-            <span style={{ fontSize: 10, color: "var(--text-secondary)", fontStyle: "italic" }}>
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-secondary)",
+                fontStyle: "italic",
+              }}
+            >
               Generate or place furniture to search matching products.
             </span>
           ) : (
@@ -197,8 +237,14 @@ export function ProductSearchPanel({
                   height: 24,
                   borderRadius: 4,
                   border: `1px solid ${activeQueryId === query.id ? "var(--accent-border)" : "var(--border-dim)"}`,
-                  background: activeQueryId === query.id ? "var(--accent-dim)" : "var(--surface-input)",
-                  color: activeQueryId === query.id ? "var(--accent-text)" : "var(--text-secondary)",
+                  background:
+                    activeQueryId === query.id
+                      ? "var(--accent-dim)"
+                      : "var(--surface-input)",
+                  color:
+                    activeQueryId === query.id
+                      ? "var(--accent-text)"
+                      : "var(--text-secondary)",
                   padding: "0 8px",
                   fontSize: 10,
                   fontFamily: "var(--font-ui)",
@@ -242,7 +288,7 @@ export function ProductSearchPanel({
               textTransform: "uppercase",
             }}
           >
-            {searchedQuery ? `eBay: ${searchedQuery}` : "eBay Results"}
+            {searchedQuery ? `Amazon: ${searchedQuery}` : "Amazon Results"}
           </span>
           {typeof totalResults === "number" ? (
             <span
@@ -261,13 +307,15 @@ export function ProductSearchPanel({
           ) : null}
         </div>
 
-        {loading ? <PanelMessage label="Searching eBay..." /> : null}
+        {loading ? <PanelMessage label="Searching Amazon..." /> : null}
         {!loading && error ? <PanelMessage label={error} tone="error" /> : null}
         {!loading && !error && results.length === 0 ? (
           <PanelMessage label="Pick a furniture item or enter a product search." />
         ) : null}
         {!loading && !error
-          ? results.map((result) => <ProductResultCard key={result.id} result={result} />)
+          ? results.map((result) => (
+              <ProductResultCard key={result.id} result={result} />
+            ))
           : null}
       </div>
     </div>
@@ -297,21 +345,36 @@ function buildProductQueries(
 
   for (const instance of instances) {
     const asset = assetById.get(instance.assetId);
-    push(`instance-${instance.id}`, instance.name, asset?.prompt ?? instance.name, "Placed");
+    push(
+      `instance-${instance.id}`,
+      instance.name,
+      asset?.prompt ?? instance.name,
+      "Placed",
+    );
   }
 
   for (const asset of assets) {
-    push(`asset-${asset.id}`, asset.name, asset.prompt || asset.name, "Workspace");
+    push(
+      `asset-${asset.id}`,
+      asset.name,
+      asset.prompt || asset.name,
+      "Workspace",
+    );
   }
 
   for (const entry of libraryEntries) {
-    push(`library-${entry.id}`, entry.name, entry.prompt || entry.name, "Library");
+    push(
+      `library-${entry.id}`,
+      entry.name,
+      entry.prompt || entry.name,
+      "Library",
+    );
   }
 
   return queries;
 }
 
-function ProductResultCard({ result }: { result: EbayProductResult }) {
+function ProductResultCard({ result }: { result: AmazonProductResult }) {
   return (
     <a
       href={result.link}
@@ -340,7 +403,11 @@ function ProductResultCard({ result }: { result: EbayProductResult }) {
         }}
       >
         {result.thumbnail ? (
-          <img src={result.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={result.thumbnail}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         ) : (
           <ShoppingBag size={18} color="var(--text-ghost)" strokeWidth={1.2} />
         )}
@@ -364,10 +431,22 @@ function ProductResultCard({ result }: { result: EbayProductResult }) {
           >
             {result.title}
           </h3>
-          <ExternalLink size={11} color="var(--text-ghost)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+          <ExternalLink
+            size={11}
+            color="var(--text-ghost)"
+            strokeWidth={1.5}
+            style={{ flexShrink: 0, marginTop: 1 }}
+          />
         </div>
         {result.price ? (
-          <div style={{ marginTop: 4, color: "var(--accent-text)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
+          <div
+            style={{
+              marginTop: 4,
+              color: "var(--accent-text)",
+              fontSize: 12,
+              fontFamily: "var(--font-mono)",
+            }}
+          >
             {result.price}
           </div>
         ) : null}
@@ -382,27 +461,60 @@ function ProductResultCard({ result }: { result: EbayProductResult }) {
             lineHeight: 1.35,
           }}
         >
-          {result.condition ? <span>{result.condition}</span> : null}
-          {result.shipping ? <span>{result.shipping}</span> : null}
-          {result.quantitySold ? <span>{result.quantitySold}</span> : null}
-          {result.seller?.positiveFeedback ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+          {typeof result.rating === "number" ? (
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+            >
               <Star size={9} strokeWidth={1.4} />
-              {result.seller.positiveFeedback}%
+              {result.rating.toFixed(1)}
             </span>
           ) : null}
+          {typeof result.reviews === "number" ? (
+            <span>{compactNumber(result.reviews)} reviews</span>
+          ) : null}
+          {result.prime ? <span>Prime</span> : null}
+          {result.boughtLastMonth ? (
+            <span>{result.boughtLastMonth}</span>
+          ) : null}
+        </div>
+        <div
+          style={{
+            marginTop: 4,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px 8px",
+            color: "var(--text-secondary)",
+            fontSize: 9,
+            lineHeight: 1.35,
+          }}
+        >
+          {result.badges?.slice(0, 2).map((badge, index) => (
+            <span key={`badge-${index}-${badge}`}>{badge}</span>
+          ))}
+          {result.tags?.slice(0, 2).map((tag, index) => (
+            <span key={`tag-${index}-${tag}`}>{tag}</span>
+          ))}
+          {result.shipping ? <span>{result.shipping}</span> : null}
+          {result.delivery?.[0] ? <span>{result.delivery[0]}</span> : null}
         </div>
       </div>
     </a>
   );
 }
 
-function PanelMessage({ label, tone = "muted" }: { label: string; tone?: "muted" | "error" }) {
+function PanelMessage({
+  label,
+  tone = "muted",
+}: {
+  label: string;
+  tone?: "muted" | "error";
+}) {
   return (
     <div
       style={{
         padding: "24px 14px",
-        color: tone === "error" ? "var(--status-error)" : "var(--text-secondary)",
+        color:
+          tone === "error" ? "var(--status-error)" : "var(--text-secondary)",
         fontSize: 11,
         lineHeight: 1.5,
         fontStyle: "italic",
@@ -447,5 +559,8 @@ function PanelIconBtn({
 }
 
 function compactNumber(value: number) {
-  return Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  return Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
 }

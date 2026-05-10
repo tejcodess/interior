@@ -27,6 +27,7 @@ import { ModeBar, type ViewMode } from "./ModeBar";
 import { ObjectsPanel } from "./ObjectsPanel";
 import { ProductSearchPanel } from "./ProductSearchPanel";
 import { Viewport } from "./Viewport";
+import type { VibeLayoutInputProps } from "./VibeLayoutInput";
 
 type PrecisionLayoutProps = {
   viewport: ReactNode;
@@ -70,6 +71,7 @@ type PrecisionLayoutProps = {
   libraryEntries: LibraryEntry[];
   savingAssetId: string | null;
   onSaveAsset: (asset: FurnitureAsset) => void;
+  onDeleteWorkspaceAsset: (id: string) => void;
   onDeleteLibraryEntry: (id: string) => void;
   upload: UploadStatus;
   stylePrompt: string;
@@ -77,6 +79,8 @@ type PrecisionLayoutProps = {
   marble: MarbleResult;
   onGenerateRoom: () => void;
   onCancelRun: () => void;
+  /** Props forwarded to the VibeLayoutInput component inside FurniturePanel */
+  vibeLayoutProps: VibeLayoutInputProps;
   /** When true, all chrome animates in from its respective edge. */
   entering?: boolean;
 };
@@ -118,6 +122,7 @@ export function PrecisionLayout({
   libraryEntries,
   savingAssetId,
   onSaveAsset,
+  onDeleteWorkspaceAsset,
   onDeleteLibraryEntry,
   upload,
   stylePrompt: _stylePrompt,
@@ -125,6 +130,7 @@ export function PrecisionLayout({
   marble,
   onGenerateRoom: _onGenerateRoom,
   onCancelRun: _onCancelRun,
+  vibeLayoutProps,
   entering = false,
 }: PrecisionLayoutProps) {
   const [activeSection, setActiveSection] = useState<RailSection>("objects");
@@ -234,9 +240,11 @@ export function PrecisionLayout({
             savingAssetId={savingAssetId}
             onGenerate={onGenerateFurniture}
             onUploadModel={onUploadModel}
+            onDeleteAsset={onDeleteWorkspaceAsset}
             onSaveAsset={onSaveAsset}
             onDeleteLibraryEntry={onDeleteLibraryEntry}
             onClose={() => setPanelOpen(false)}
+            vibeLayoutProps={vibeLayoutProps}
           />
         </div>
       </div>

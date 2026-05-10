@@ -1,0 +1,56 @@
+{
+  "prompt": "warm Scandinavian living room",
+  "raw": "[\n  {\n    \"assetKey\": \"sofaSingle\",\n    \"x\": 0.8,\n    \"z\": 0.5,\n    \"rotationY\": 90,\n    \"scale\": 1,\n    \"label\": \"Sofa\",\n    \"rationale\": \"Central seating area\"\n  },\n  {\n    \"assetKey\": \"tableCoffee\",\n    \"x\": 0.8,\n    \"z\": -0.7,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Coffee Table\",\n    \"rationale\": \"In front of sofa for functionality\"\n  },\n  {\n    \"assetKey\": \"lampFloor\",\n    \"x\": 2.2,\n    \"z\": 0.5,\n    \"rotationY\": 180,\n    \"scale\": 1,\n    \"label\": \"Floor Lamp\",\n    \"rationale\": \"Soft lighting beside sofa\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": -1.5,\n    \"z\": 0.5,\n    \"rotationY\": 270,\n    \"scale\": 1,\n    \"label\": \"Armchair\",\n    \"rationale\": \"Complementary seating\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"sofaSingle\",\n    \"x\": 0.8,\n    \"z\": 0.5,\n    \"rotationY\": 90,\n    \"scale\": 1,\n    \"label\": \"Sofa\",\n    \"rationale\": \"Central seating area\"\n  },\n  {\n    \"assetKey\": \"tableCoffee\",\n    \"x\": 0.8,\n    \"z\": -0.7,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Coffee Table\",\n    \"rationale\": \"In front of sofa for functionality\"\n  },\n  {\n    \"assetKey\": \"lampFloor\",\n    \"x\": 2.2,\n    \"z\": 0.5,\n    \"rotationY\": 180,\n    \"scale\": 1,\n    \"label\": \"Floor Lamp\",\n    \"rationale\": \"Soft lighting beside sofa\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": -1.5,\n    \"z\": 0.5,\n    \"rotationY\": 270,\n    \"scale\": 1,\n    \"label\": \"Armchair\",\n    \"rationale\": \"Complementary seating\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "sofaSingle",
+      "x": 0.8,
+      "z": 0.5,
+      "rotationY": 90,
+      "scale": 1,
+      "label": "Sofa",
+      "rationale": "Central seating area",
+      "assetId": "sofa",
+      "assetName": "Sofa",
+      "modelUrl": "/assets/furniture/loungeSofa.glb"
+    },
+    {
+      "assetKey": "tableCoffee",
+      "x": 0.8,
+      "z": -0.7,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Coffee Table",
+      "rationale": "In front of sofa for functionality",
+      "assetId": "table-coffee",
+      "assetName": "Table Coffee",
+      "modelUrl": "/assets/furniture/tableCoffee.glb"
+    },
+    {
+      "assetKey": "lampFloor",
+      "x": 2.2,
+      "z": 0.5,
+      "rotationY": 180,
+      "scale": 1,
+      "label": "Floor Lamp",
+      "rationale": "Soft lighting beside sofa",
+      "assetId": "lamp-floor",
+      "assetName": "Lamp Floor",
+      "modelUrl": "/assets/furniture/lampSquareFloor.glb"
+    },
+    {
+      "assetKey": "chairArmchair",
+      "x": -1.5,
+      "z": 0.5,
+      "rotationY": 270,
+      "scale": 1,
+      "label": "Armchair",
+      "rationale": "Complementary seating",
+      "assetId": "chair-cushion",
+      "assetName": "Chair Cushion",
+      "modelUrl": "/assets/furniture/chairCushion.glb"
+    }
+  ],
+  "timestamp": "2026-05-07T11:11:52.292Z"
+}

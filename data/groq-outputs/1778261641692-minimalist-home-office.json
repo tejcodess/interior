@@ -1,0 +1,56 @@
+{
+  "prompt": "minimalist home office",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Desk\",\n    \"rationale\": \"A minimalist home office requires a simple and functional workspace, which is provided by a dedicated office desk.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Chair\",\n    \"rationale\": \"A minimalist home office benefits from a compact and ergonomic office chair that complements the desk.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -0.6,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"A minimalist home office can be enhanced by a simple table lamp that provides focused lighting without cluttering the space.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.8,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Small Bookshelf\",\n    \"rationale\": \"A minimalist home office may include a compact bookshelf to store essential books and documents while maintaining a clutter-free environment.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Desk\",\n    \"rationale\": \"A minimalist home office requires a simple and functional workspace, which is provided by a dedicated office desk.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Chair\",\n    \"rationale\": \"A minimalist home office benefits from a compact and ergonomic office chair that complements the desk.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -0.6,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"A minimalist home office can be enhanced by a simple table lamp that provides focused lighting without cluttering the space.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.8,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Small Bookshelf\",\n    \"rationale\": \"A minimalist home office may include a compact bookshelf to store essential books and documents while maintaining a clutter-free environment.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDesk",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Office Desk",
+      "rationale": "A minimalist home office requires a simple and functional workspace, which is provided by a dedicated office desk.",
+      "assetId": "desk",
+      "assetName": "Desk",
+      "modelUrl": "/assets/furniture/desk.glb"
+    },
+    {
+      "assetKey": "chairOffice",
+      "x": 0.8,
+      "z": -0.8,
+      "rotationY": -45,
+      "scale": 1,
+      "label": "chairOffice",
+      "rationale": "A minimalist home office benefits from a compact and ergonomic office chair that complements the desk.",
+      "assetId": "chair-desk",
+      "assetName": "Chair Desk",
+      "modelUrl": "/assets/furniture/chairDesk.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": -0.6,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "lampTable",
+      "rationale": "A minimalist home office can be enhanced by a simple table lamp that provides focused lighting without cluttering the space.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": 1.8,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Small Bookshelf",
+      "rationale": "A minimalist home office may include a compact bookshelf to store essential books and documents while maintaining a clutter-free environment.",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    }
+  ],
+  "timestamp": "2026-05-08T17:34:01.692Z"
+}

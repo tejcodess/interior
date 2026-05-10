@@ -1,0 +1,56 @@
+{
+  "prompt": "bedroom",
+  "raw": "[\n  {\n    \"assetKey\": \"bedDouble\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Double Bed\",\n    \"rationale\": \"A bedroom typically centers around a double bed as the primary piece of furniture.\"\n  },\n  {\n    \"assetKey\": \"nightstand\",\n    \"x\": 1.2,\n    \"z\": -0.8,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Bedside Table\",\n    \"rationale\": \"A bedroom often includes a bedside table to provide a convenient spot for personal items, aligning with the bedroom vibe.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 1.2,\n    \"z\": -0.8,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"Table lamps are common in bedrooms to provide warm and cozy lighting, fitting the bedroom atmosphere.\"\n  },\n  {\n    \"assetKey\": \"dresser\",\n    \"x\": -1.5,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Six-Drawer Dresser\",\n    \"rationale\": \"A dresser is a fundamental piece of furniture in a bedroom, used for storing clothes and personal items, consistent with the bedroom vibe.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"bedDouble\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Double Bed\",\n    \"rationale\": \"A bedroom typically centers around a double bed as the primary piece of furniture.\"\n  },\n  {\n    \"assetKey\": \"nightstand\",\n    \"x\": 1.2,\n    \"z\": -0.8,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Bedside Table\",\n    \"rationale\": \"A bedroom often includes a bedside table to provide a convenient spot for personal items, aligning with the bedroom vibe.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 1.2,\n    \"z\": -0.8,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Table Lamp\",\n    \"rationale\": \"Table lamps are common in bedrooms to provide warm and cozy lighting, fitting the bedroom atmosphere.\"\n  },\n  {\n    \"assetKey\": \"dresser\",\n    \"x\": -1.5,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Six-Drawer Dresser\",\n    \"rationale\": \"A dresser is a fundamental piece of furniture in a bedroom, used for storing clothes and personal items, consistent with the bedroom vibe.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "bedDouble",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Double Bed",
+      "rationale": "A bedroom typically centers around a double bed as the primary piece of furniture.",
+      "assetId": "bed-double",
+      "assetName": "Bed Double",
+      "modelUrl": "/assets/furniture/bedDouble.glb"
+    },
+    {
+      "assetKey": "nightstand",
+      "x": 1.2,
+      "z": -0.8,
+      "rotationY": 45,
+      "scale": 1,
+      "label": "Bedside Table",
+      "rationale": "A bedroom often includes a bedside table to provide a convenient spot for personal items, aligning with the bedroom vibe.",
+      "assetId": "side-table-drawers",
+      "assetName": "Side Table Drawers",
+      "modelUrl": "/assets/furniture/sideTableDrawers.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": 1.2,
+      "z": -0.8,
+      "rotationY": 45,
+      "scale": 1,
+      "label": "lampTable",
+      "rationale": "Table lamps are common in bedrooms to provide warm and cozy lighting, fitting the bedroom atmosphere.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "dresser",
+      "x": -1.5,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Six-Drawer Dresser",
+      "rationale": "A dresser is a fundamental piece of furniture in a bedroom, used for storing clothes and personal items, consistent with the bedroom vibe.",
+      "assetId": "side-table-drawers",
+      "assetName": "Side Table Drawers",
+      "modelUrl": "/assets/furniture/sideTableDrawers.glb"
+    }
+  ],
+  "timestamp": "2026-05-10T05:17:18.676Z"
+}

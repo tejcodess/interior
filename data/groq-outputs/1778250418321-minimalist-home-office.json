@@ -1,0 +1,56 @@
+{
+  "prompt": "minimalist home office",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Modern Desk\",\n    \"rationale\": \"A simple desk is essential for a minimalist home office, providing a clean workspace\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.6,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"A minimalist home office requires a chair that is functional and unobtrusive, like this ergonomic office chair\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -0.6,\n    \"z\": 0.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Simple Table Lamp\",\n    \"rationale\": \"A minimalist home office benefits from a simple table lamp, which provides focused lighting without clutter\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.4,\n    \"z\": 0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Compact Bookshelf\",\n    \"rationale\": \"A minimalist home office can include a small bookshelf to store essential books and documents, maintaining a sense of simplicity\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Modern Desk\",\n    \"rationale\": \"A simple desk is essential for a minimalist home office, providing a clean workspace\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.6,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"A minimalist home office requires a chair that is functional and unobtrusive, like this ergonomic office chair\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -0.6,\n    \"z\": 0.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Simple Table Lamp\",\n    \"rationale\": \"A minimalist home office benefits from a simple table lamp, which provides focused lighting without clutter\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.4,\n    \"z\": 0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Compact Bookshelf\",\n    \"rationale\": \"A minimalist home office can include a small bookshelf to store essential books and documents, maintaining a sense of simplicity\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDesk",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Modern Desk",
+      "rationale": "A simple desk is essential for a minimalist home office, providing a clean workspace",
+      "assetId": "desk",
+      "assetName": "Desk",
+      "modelUrl": "/assets/furniture/desk.glb"
+    },
+    {
+      "assetKey": "chairOffice",
+      "x": 0.8,
+      "z": -0.6,
+      "rotationY": -53,
+      "scale": 1,
+      "label": "Ergonomic Office Chair",
+      "rationale": "A minimalist home office requires a chair that is functional and unobtrusive, like this ergonomic office chair",
+      "assetId": "chair-desk",
+      "assetName": "Chair Desk",
+      "modelUrl": "/assets/furniture/chairDesk.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": -0.6,
+      "z": 0.2,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Simple Table Lamp",
+      "rationale": "A minimalist home office benefits from a simple table lamp, which provides focused lighting without clutter",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": 1.4,
+      "z": 0.8,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Compact Bookshelf",
+      "rationale": "A minimalist home office can include a small bookshelf to store essential books and documents, maintaining a sense of simplicity",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    }
+  ],
+  "timestamp": "2026-05-08T14:26:58.321Z"
+}

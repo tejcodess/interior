@@ -180,3 +180,60 @@ function openingWorldPosition(room: RoomBounds, wall: WallId, offset: number, y:
   if (wall === "east") return [room.maxX, y, centerZ + offset];
   return [room.minX, y, centerZ + offset];
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Vibe layout collision nudge
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Checks if a proposed 2D position (on the XZ plane) collides with any
+ * existing furniture instance within `minDist` meters.
+ */
+export function collidesWithExisting(
+  x: number,
+  z: number,
+  existing: Array<{ position: Vec3 }>,
+  minDist = 0.5,
+): boolean {
+  const minDist2 = minDist * minDist;
+  for (const inst of existing) {
+    const dx = inst.position[0] - x;
+    const dz = inst.position[2] - z;
+    if (dx * dx + dz * dz < minDist2) return true;
+  }
+  return false;
+}
+
+/**
+ * Attempts to nudge `{x, z}` up to `maxAttempts` times (alternating X/Z by
+ * `nudgeStep` meters) until it no longer collides with any existing instance.
+ *
+ * Returns the nudged position, or `null` if no clear spot was found and the
+ * item should be skipped.
+ */
+export function nudgeUntilClear(
+  x: number,
+  z: number,
+  existing: Array<{ position: Vec3 }>,
+  options: {
+    minDist?: number;
+    nudgeStep?: number;
+    maxAttempts?: number;
+  } = {},
+): { x: number; z: number } | null {
+  const { minDist = 0.5, nudgeStep = 0.5, maxAttempts = 3 } = options;
+
+  if (!collidesWithExisting(x, z, existing, minDist)) return { x, z };
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Alternate nudging on X vs Z each attempt
+    const nudgedX = attempt % 2 === 0 ? x + nudgeStep * (attempt + 1) : x;
+    const nudgedZ = attempt % 2 !== 0 ? z + nudgeStep * (attempt + 1) : z;
+
+    if (!collidesWithExisting(nudgedX, nudgedZ, existing, minDist)) {
+      return { x: nudgedX, z: nudgedZ };
+    }
+  }
+
+  return null; // no clear spot found – caller should skip this item
+}

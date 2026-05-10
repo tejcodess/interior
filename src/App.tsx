@@ -18,6 +18,7 @@ import {
 import { PrecisionLayout } from "./components/PrecisionLayout";
 import { SceneView } from "./components/SceneView";
 import { BlueprintView } from "./components/BlueprintView";
+import { WallColorPalette } from "./components/WallColorPalette";
 import { buildBlueprintDxf } from "./lib/blueprintDxf";
 import type { ViewMode } from "./components/ModeBar";
 import {
@@ -31,12 +32,15 @@ import {
   createWindowOpening,
   initialState,
   removeWallSegment,
+  roomDimensions,
 } from "./state/editor";
 import type {
   CaptureImage,
   EditorState,
   FurnitureAsset,
+  FurnitureInstance,
   LibraryEntry,
+  WallId,
 } from "./state/types";
 
 export default function App({ entering = false }: { entering?: boolean }) {
@@ -44,6 +48,17 @@ export default function App({ entering = false }: { entering?: boolean }) {
   const [viewMode, setViewMode] = useState<ViewMode>("Block");
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [savingAssetId, setSavingAssetId] = useState<string | null>(null);
+  const [selectedWallSegment, setSelectedWallSegment] = useState<{
+    wall: WallId;
+    segmentId: string;
+    isWholeWall?: boolean;
+  } | null>(null);
+  const [wallPalettePosition, setWallPalettePosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  // Undo stack — each entry is a snapshot of furnitureInstances before a batch
+  const [_undoStack, setUndoStack] = useState<FurnitureInstance[][]>([]);
   const sceneCaptureRef = useRef<() => CaptureImage | undefined>(
     () => undefined,
   );
@@ -102,6 +117,12 @@ export default function App({ entering = false }: { entering?: boolean }) {
         return;
       }
 
+      if (event.key === "Escape") {
+        setSelectedWallSegment(null);
+        setWallPalettePosition(null);
+        return;
+      }
+
       // [ and ] rotate the selected furniture by ±15°
       if (event.key === "[" || event.key === "]") {
         const delta = event.key === "[" ? -Math.PI / 12 : Math.PI / 12;
@@ -128,6 +149,29 @@ export default function App({ entering = false }: { entering?: boolean }) {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // ── Ctrl+Z global undo handler ─────────────────────────────────────────────
+  useEffect(() => {
+    function handleUndo(event: KeyboardEvent) {
+      if (!((event.ctrlKey || event.metaKey) && event.key === "z")) return;
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      )
+        return;
+      setUndoStack((prev) => {
+        if (prev.length === 0) return prev;
+        const snapshot = prev[prev.length - 1];
+        const next = prev.slice(0, -1);
+        setState((current) => ({ ...current, furnitureInstances: snapshot }));
+        return next;
+      });
+    }
+    window.addEventListener("keydown", handleUndo);
+    return () => window.removeEventListener("keydown", handleUndo);
   }, []);
 
   const registerSceneCapture = useCallback(
@@ -477,6 +521,49 @@ export default function App({ entering = false }: { entering?: boolean }) {
     }));
   }
 
+  function handleDeleteWorkspaceAsset(id: string) {
+    furnitureStreamsRef.current.get(id)?.close();
+    furnitureStreamsRef.current.delete(id);
+
+    setState((current) => {
+      const selectedInstanceRemoved =
+        current.selected?.type === "furniture" &&
+        current.furnitureInstances.find(
+          (instance) => instance.id === current.selected?.id,
+        )?.assetId === id;
+
+      return {
+        ...current,
+        furnitureAssets: current.furnitureAssets.filter(
+          (asset) => asset.id !== id,
+        ),
+        furnitureInstances: current.furnitureInstances.filter(
+          (instance) => instance.assetId !== id,
+        ),
+        selected: selectedInstanceRemoved ? null : current.selected,
+      };
+    });
+  }
+
+  // ── Vibe batch add ─────────────────────────────────────────────────────────
+
+  function handlePushUndo(snapshot: FurnitureInstance[]) {
+    setUndoStack((prev) => [...prev, snapshot]);
+  }
+
+  function handleBatchAdd(
+    newInstances: FurnitureInstance[],
+    newAssets: FurnitureAsset[],
+    vibe?: string,
+  ) {
+    setState((current) => ({
+      ...current,
+      furnitureAssets: [...newAssets, ...current.furnitureAssets],
+      furnitureInstances: [...current.furnitureInstances, ...newInstances],
+      activeVibe: vibe ?? null,
+    }));
+  }
+
   function handleRotateFurnitureInstance(id: string, deltaRad: number) {
     setState((current) => ({
       ...current,
@@ -606,9 +693,48 @@ export default function App({ entering = false }: { entering?: boolean }) {
         })),
       };
     });
+
+  const updateWallSegmentColor = useCallback(
+    (wall: string, segmentId: string, color: string, isWholeWall?: boolean) => {
+      setState((current) => ({
+        ...current,
+        wallSegments: {
+          ...current.wallSegments,
+          [wall as keyof typeof current.wallSegments]: (
+            current.wallSegments[wall as keyof typeof current.wallSegments] ||
+            []
+          ).map((seg) =>
+            // If whole-wall paint: color every segment; otherwise just the target segment
+            isWholeWall || seg.id === segmentId ? { ...seg, color } : seg,
+          ),
+        },
+      }));
+    },
+    [],
+  );
+
+  const openWallPalette = useCallback(
+    (
+      target: {
+        wall: WallId;
+        segmentId: string;
+        isWholeWall?: boolean;
+      },
+      position: { x: number; y: number },
+    ) => {
+      setSelectedWallSegment(target);
+      setWallPalettePosition(position);
+    },
+    [],
+  );
+
   const setSelected: React.ComponentProps<typeof SceneView>["onSelect"] = (
     selected,
-  ) => setState((current) => ({ ...current, selected }));
+  ) => {
+    setState((current) => ({ ...current, selected }));
+    setSelectedWallSegment(null);
+    setWallPalettePosition(null);
+  };
   const setTool: React.ComponentProps<typeof SceneView>["onToolChange"] = (
     tool,
   ) => setState((current) => ({ ...current, tool }));
@@ -715,132 +841,172 @@ export default function App({ entering = false }: { entering?: boolean }) {
   }
 
   return (
-    <PrecisionLayout
-      viewport={
-        <SceneView
-          room={state.room}
-          assets={state.furnitureAssets}
-          assetById={assetById}
-          instances={state.furnitureInstances}
-          shapes={state.customShapes}
-          cameras={state.cameras}
-          doors={state.doors}
-          windows={state.windows}
-          wallSegments={state.wallSegments}
-          activeShapeKind={state.activeShapeKind}
-          selected={state.selected}
-          hovered={null}
-          tool={state.tool}
-          marble={state.marble}
-          panoramaOpacity={state.panoramaOpacity}
-          displayMode={viewMode}
-          onRoomChange={setRoom}
-          onInstancesChange={setInstances}
-          onShapesChange={setShapes}
-          onCamerasChange={setCameras}
-          onDoorsChange={setDoors}
-          onWindowsChange={setWindows}
-          onWallSegmentsChange={setWallSegments}
-          onSelect={setSelected}
-          onToolChange={setTool}
-          registerSceneCapture={registerSceneCapture}
-          onAssetMeasured={handleAssetMeasured}
+    <>
+      <PrecisionLayout
+        viewport={
+          <SceneView
+            room={state.room}
+            assets={state.furnitureAssets}
+            assetById={assetById}
+            instances={state.furnitureInstances}
+            shapes={state.customShapes}
+            cameras={state.cameras}
+            doors={state.doors}
+            windows={state.windows}
+            wallSegments={state.wallSegments}
+            activeShapeKind={state.activeShapeKind}
+            selected={state.selected}
+            hovered={null}
+            tool={state.tool}
+            marble={state.marble}
+            panoramaOpacity={state.panoramaOpacity}
+            displayMode={viewMode}
+            onRoomChange={setRoom}
+            onInstancesChange={setInstances}
+            onShapesChange={setShapes}
+            onCamerasChange={setCameras}
+            onDoorsChange={setDoors}
+            onWindowsChange={setWindows}
+            onWallSegmentsChange={setWallSegments}
+            onSelect={setSelected}
+            onToolChange={setTool}
+            registerSceneCapture={registerSceneCapture}
+            onAssetMeasured={handleAssetMeasured}
+            onWallContextMenu={openWallPalette}
+          />
+        }
+        blueprint={
+          <BlueprintView
+            room={state.room}
+            assets={state.furnitureAssets}
+            assetById={assetById}
+            instances={state.furnitureInstances}
+            shapes={state.customShapes}
+            doors={state.doors}
+            windows={state.windows}
+            wallSegments={state.wallSegments}
+            selected={state.selected}
+            tool={state.tool}
+            onSelect={setSelected}
+            onRoomChange={setRoom}
+            onInstancesChange={setInstances}
+            onShapesChange={setShapes}
+            onWallSegmentsChange={setWallSegments}
+            onDoorsChange={setDoors}
+            onWindowsChange={setWindows}
+          />
+        }
+        blueprintPreview={
+          <BlueprintView
+            room={state.room}
+            assets={state.furnitureAssets}
+            assetById={assetById}
+            instances={state.furnitureInstances}
+            shapes={state.customShapes}
+            doors={state.doors}
+            windows={state.windows}
+            wallSegments={state.wallSegments}
+            selected={state.selected}
+            tool={state.tool}
+            onSelect={() => undefined}
+            onRoomChange={() => undefined}
+            onInstancesChange={() => undefined}
+            onShapesChange={() => undefined}
+            onWallSegmentsChange={() => undefined}
+            onDoorsChange={() => undefined}
+            onWindowsChange={() => undefined}
+            registerBlueprintCapture={registerBlueprintCapture}
+            interactive={false}
+          />
+        }
+        furnitureAssets={state.furnitureAssets}
+        furnitureInstances={state.furnitureInstances}
+        customShapes={state.customShapes}
+        cameras={state.cameras}
+        doors={state.doors}
+        windows={state.windows}
+        wallSegments={state.wallSegments}
+        assetById={assetById}
+        room={state.room}
+        tool={state.tool}
+        selected={state.selected}
+        activeShapeKind={state.activeShapeKind}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onToolChange={setTool}
+        onSelect={setSelected}
+        onActiveShapeKindChange={(activeShapeKind) =>
+          setState((current) => ({
+            ...current,
+            activeShapeKind,
+            tool: "add-shape",
+          }))
+        }
+        onUploadModel={handleUploadModel}
+        onAddDoor={handleAddDoor}
+        onAddWindow={handleAddWindow}
+        onRemoveDoor={handleRemoveDoor}
+        onRemoveWindow={handleRemoveWindow}
+        onRemoveFurnitureInstance={handleRemoveFurnitureInstance}
+        onRotateFurnitureInstance={handleRotateFurnitureInstance}
+        onRemoveShape={handleRemoveShape}
+        onRemoveWallSegment={handleRemoveWallSegment}
+        onRemoveCamera={handleRemoveCamera}
+        onResetWallSegments={handleResetWallSegments}
+        onGenerateFurniture={handleGenerateFurniture}
+        onDownloadBlueprint={handleDownloadBlueprint}
+        libraryEntries={libraryEntries}
+        savingAssetId={savingAssetId}
+        onSaveAsset={handleSaveAsset}
+        onDeleteWorkspaceAsset={handleDeleteWorkspaceAsset}
+        onDeleteLibraryEntry={handleDeleteLibraryEntry}
+        upload={state.upload}
+        stylePrompt={state.stylePrompt}
+        onStylePromptChange={(stylePrompt) =>
+          setState((current) => ({ ...current, stylePrompt }))
+        }
+        marble={state.marble}
+        onGenerateRoom={handleGenerateFinalRoom}
+        onCancelRun={handleCancelRun}
+        vibeLayoutProps={{
+          roomWidth: roomDimensions(state.room).width,
+          roomDepth: roomDimensions(state.room).depth,
+          existingInstances: state.furnitureInstances,
+          onBatchAdd: handleBatchAdd,
+          onPushUndo: handlePushUndo,
+        }}
+        entering={entering}
+      />
+      {selectedWallSegment && (
+        <WallColorPalette
+          selectedColor={
+            selectedWallSegment.isWholeWall
+              ? // For whole-wall: show color of first segment (they should all match after painting)
+                state.wallSegments[
+                  selectedWallSegment.wall as keyof typeof state.wallSegments
+                ]?.[0]?.color
+              : state.wallSegments[
+                  selectedWallSegment.wall as keyof typeof state.wallSegments
+                ]?.find((seg) => seg.id === selectedWallSegment.segmentId)
+                  ?.color
+          }
+          onColorSelect={(color) => {
+            updateWallSegmentColor(
+              selectedWallSegment.wall,
+              selectedWallSegment.segmentId,
+              color,
+              selectedWallSegment.isWholeWall,
+            );
+          }}
+          onClose={() => {
+            setSelectedWallSegment(null);
+            setWallPalettePosition(null);
+          }}
+          wallInfo={`${selectedWallSegment.wall} wall`}
+          position={wallPalettePosition ?? undefined}
         />
-      }
-      blueprint={
-        <BlueprintView
-          room={state.room}
-          assets={state.furnitureAssets}
-          assetById={assetById}
-          instances={state.furnitureInstances}
-          shapes={state.customShapes}
-          doors={state.doors}
-          windows={state.windows}
-          wallSegments={state.wallSegments}
-          selected={state.selected}
-          tool={state.tool}
-          onSelect={setSelected}
-          onRoomChange={setRoom}
-          onInstancesChange={setInstances}
-          onShapesChange={setShapes}
-          onWallSegmentsChange={setWallSegments}
-          onDoorsChange={setDoors}
-          onWindowsChange={setWindows}
-        />
-      }
-      blueprintPreview={
-        <BlueprintView
-          room={state.room}
-          assets={state.furnitureAssets}
-          assetById={assetById}
-          instances={state.furnitureInstances}
-          shapes={state.customShapes}
-          doors={state.doors}
-          windows={state.windows}
-          wallSegments={state.wallSegments}
-          selected={state.selected}
-          tool={state.tool}
-          onSelect={() => undefined}
-          onRoomChange={() => undefined}
-          onInstancesChange={() => undefined}
-          onShapesChange={() => undefined}
-          onWallSegmentsChange={() => undefined}
-          onDoorsChange={() => undefined}
-          onWindowsChange={() => undefined}
-          registerBlueprintCapture={registerBlueprintCapture}
-          interactive={false}
-        />
-      }
-      furnitureAssets={state.furnitureAssets}
-      furnitureInstances={state.furnitureInstances}
-      customShapes={state.customShapes}
-      cameras={state.cameras}
-      doors={state.doors}
-      windows={state.windows}
-      wallSegments={state.wallSegments}
-      assetById={assetById}
-      room={state.room}
-      tool={state.tool}
-      selected={state.selected}
-      activeShapeKind={state.activeShapeKind}
-      viewMode={viewMode}
-      onViewModeChange={setViewMode}
-      onToolChange={setTool}
-      onSelect={setSelected}
-      onActiveShapeKindChange={(activeShapeKind) =>
-        setState((current) => ({
-          ...current,
-          activeShapeKind,
-          tool: "add-shape",
-        }))
-      }
-      onUploadModel={handleUploadModel}
-      onAddDoor={handleAddDoor}
-      onAddWindow={handleAddWindow}
-      onRemoveDoor={handleRemoveDoor}
-      onRemoveWindow={handleRemoveWindow}
-      onRemoveFurnitureInstance={handleRemoveFurnitureInstance}
-      onRotateFurnitureInstance={handleRotateFurnitureInstance}
-      onRemoveShape={handleRemoveShape}
-      onRemoveWallSegment={handleRemoveWallSegment}
-      onRemoveCamera={handleRemoveCamera}
-      onResetWallSegments={handleResetWallSegments}
-      onGenerateFurniture={handleGenerateFurniture}
-      onDownloadBlueprint={handleDownloadBlueprint}
-      libraryEntries={libraryEntries}
-      savingAssetId={savingAssetId}
-      onSaveAsset={handleSaveAsset}
-      onDeleteLibraryEntry={handleDeleteLibraryEntry}
-      upload={state.upload}
-      stylePrompt={state.stylePrompt}
-      onStylePromptChange={(stylePrompt) =>
-        setState((current) => ({ ...current, stylePrompt }))
-      }
-      marble={state.marble}
-      onGenerateRoom={handleGenerateFinalRoom}
-      onCancelRun={handleCancelRun}
-      entering={entering}
-    />
+      )}
+    </>
   );
 }
 

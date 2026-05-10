@@ -119,7 +119,8 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
         style={{
           position: "absolute",
           inset: 0,
-          background: "radial-gradient(ellipse 90% 80% at 50% 50%, transparent 20%, rgba(9,10,12,0.72) 100%)",
+          background:
+            "radial-gradient(ellipse 90% 80% at 50% 50%, transparent 20%, rgba(9,10,12,0.72) 100%)",
           pointerEvents: "none",
           transition: "opacity 0.6s ease",
           opacity: isTilting ? 0.35 : 1,
@@ -147,7 +148,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
               : "scale(1) translateY(18px)",
         }}
       >
-        {/* Brand mark — ZenSpace logo + wordmark */}
+        {/* Brand mark — BUILD ARENA logo + wordmark */}
         <div
           style={{
             display: "flex",
@@ -161,7 +162,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
         >
           <img
             src="/inter-logo.png"
-            alt="ZenSpace"
+            alt="BUILD ARENA"
             width={28}
             height={28}
             style={{
@@ -179,7 +180,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
               userSelect: "none",
             }}
           >
-            ZenSpace
+            BUILD ARENA
           </span>
           <span
             style={{
@@ -284,7 +285,7 @@ export default function LandingPage({ isTilting, onEnter }: LandingPageProps) {
           }}
         >
           <button className="landing-btn" onClick={handleEnter}>
-            Enter ZenSpace
+            Enter BUILD ARENA
             <span className="arrow">→</span>
           </button>
         </div>

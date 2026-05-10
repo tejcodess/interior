@@ -118,21 +118,29 @@ export function BlueprintView({
 }: BlueprintViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [draggingWall, setDraggingWall] = useState<WallId | null>(null);
-  const [draggingWallSegment, setDraggingWallSegment] = useState<BlueprintWallSegmentDrag | null>(null);
-  const [draggingConnector, setDraggingConnector] = useState<BlueprintConnectorDrag | null>(null);
-  const [objectTransform, setObjectTransform] = useState<BlueprintObjectTransform | null>(null);
-  const [openingDrag, setOpeningDrag] = useState<OpeningDragSession | null>(null);
+  const [draggingWallSegment, setDraggingWallSegment] =
+    useState<BlueprintWallSegmentDrag | null>(null);
+  const [draggingConnector, setDraggingConnector] =
+    useState<BlueprintConnectorDrag | null>(null);
+  const [objectTransform, setObjectTransform] =
+    useState<BlueprintObjectTransform | null>(null);
+  const [openingDrag, setOpeningDrag] = useState<OpeningDragSession | null>(
+    null,
+  );
   const [svgSize, setSvgSize] = useState({ width: 1, height: 1 });
   const floorPolygon = useMemo(() => {
     const segmentation = wallSegments ?? {
       north: [{ id: "n", start: 0, end: 1, displacement: 0 }],
       south: [{ id: "s", start: 0, end: 1, displacement: 0 }],
-      east:  [{ id: "e", start: 0, end: 1, displacement: 0 }],
-      west:  [{ id: "w", start: 0, end: 1, displacement: 0 }],
+      east: [{ id: "e", start: 0, end: 1, displacement: 0 }],
+      west: [{ id: "w", start: 0, end: 1, displacement: 0 }],
     };
     return buildFloorPolygon(room, segmentation);
   }, [room, wallSegments]);
-  const floorBounds = useMemo(() => floorBoundsFromPolygon(room, floorPolygon), [room, floorPolygon]);
+  const floorBounds = useMemo(
+    () => floorBoundsFromPolygon(room, floorPolygon),
+    [room, floorPolygon],
+  );
   const rawView = useMemo(() => {
     const padding = 1.2;
     return {
@@ -142,11 +150,17 @@ export function BlueprintView({
       height: floorBounds.maxZ - floorBounds.minZ + padding * 2,
     };
   }, [floorBounds]);
-  const view = useMemo(() => fitViewToAspect(rawView, svgSize.width / svgSize.height), [rawView, svgSize]);
-  const dimensions = useMemo(() => ({
-    width: formatBlueprintMeasure(floorBounds.maxX - floorBounds.minX),
-    depth: formatBlueprintMeasure(floorBounds.maxZ - floorBounds.minZ),
-  }), [floorBounds]);
+  const view = useMemo(
+    () => fitViewToAspect(rawView, svgSize.width / svgSize.height),
+    [rawView, svgSize],
+  );
+  const dimensions = useMemo(
+    () => ({
+      width: formatBlueprintMeasure(floorBounds.maxX - floorBounds.minX),
+      depth: formatBlueprintMeasure(floorBounds.maxZ - floorBounds.minZ),
+    }),
+    [floorBounds],
+  );
   const floorPolygonPoints = useMemo(() => {
     if (floorPolygon.length < 3) return null;
     return floorPolygon.map((point) => `${point.x},${point.z}`).join(" ");
@@ -160,7 +174,8 @@ export function BlueprintView({
       const rect = svg.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         setSvgSize((current) =>
-          Math.abs(current.width - rect.width) < 0.5 && Math.abs(current.height - rect.height) < 0.5
+          Math.abs(current.width - rect.width) < 0.5 &&
+          Math.abs(current.height - rect.height) < 0.5
             ? current
             : { width: rect.width, height: rect.height },
         );
@@ -192,12 +207,15 @@ export function BlueprintView({
     return new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
   }, []);
 
-  const wallValueFromPoint = useCallback((wall: WallId, clientX: number, clientY: number) => {
-    const point = pointFromPointer(clientX, clientY);
-    if (!point) return null;
+  const wallValueFromPoint = useCallback(
+    (wall: WallId, clientX: number, clientY: number) => {
+      const point = pointFromPointer(clientX, clientY);
+      if (!point) return null;
 
-    return wall === "east" || wall === "west" ? point.x : point.y;
-  }, [pointFromPointer]);
+      return wall === "east" || wall === "west" ? point.x : point.y;
+    },
+    [pointFromPointer],
+  );
 
   function beginWallDrag(wall: WallId, event: ReactPointerEvent<SVGElement>) {
     event.preventDefault();
@@ -213,8 +231,13 @@ export function BlueprintView({
   function updateWallDrag(event: ReactPointerEvent<SVGSVGElement>) {
     if (!draggingWall) return;
 
-    const value = wallValueFromPoint(draggingWall, event.clientX, event.clientY);
-    if (value !== null) onRoomChange(resizeRoomFromWall(room, draggingWall, value));
+    const value = wallValueFromPoint(
+      draggingWall,
+      event.clientX,
+      event.clientY,
+    );
+    if (value !== null)
+      onRoomChange(resizeRoomFromWall(room, draggingWall, value));
   }
 
   function endWallDrag(event: ReactPointerEvent<SVGSVGElement>) {
@@ -231,26 +254,58 @@ export function BlueprintView({
     setDraggingWall(null);
   }
 
-  function beginWallSegmentDrag(wall: WallId, segmentId: string, event: ReactPointerEvent<SVGElement>) {
+  function beginWallSegmentDrag(
+    wall: WallId,
+    segmentId: string,
+    event: ReactPointerEvent<SVGElement>,
+  ) {
     event.preventDefault();
     event.stopPropagation();
     onSelect({ type: "wall-segment", wall, id: segmentId });
-    if ((tool !== "select" && tool !== "move") || !wallSegments || !onWallSegmentsChange) return;
+    if (
+      (tool !== "select" && tool !== "move") ||
+      !wallSegments ||
+      !onWallSegmentsChange
+    )
+      return;
     setDraggingWallSegment({ wall, segmentId });
     svgRef.current?.setPointerCapture(event.pointerId);
-    updateWallSegmentDragFromPointer(wall, segmentId, event.clientX, event.clientY);
+    updateWallSegmentDragFromPointer(
+      wall,
+      segmentId,
+      event.clientX,
+      event.clientY,
+    );
   }
 
-  function updateWallSegmentDragFromPointer(wall: WallId, segmentId: string, clientX: number, clientY: number) {
+  function updateWallSegmentDragFromPointer(
+    wall: WallId,
+    segmentId: string,
+    clientX: number,
+    clientY: number,
+  ) {
     if (!wallSegments || !onWallSegmentsChange) return;
     const point = pointFromPointer(clientX, clientY);
     if (!point) return;
 
-    const base = wall === "north" ? room.maxZ : wall === "south" ? room.minZ : wall === "east" ? room.maxX : room.minX;
+    const base =
+      wall === "north"
+        ? room.maxZ
+        : wall === "south"
+          ? room.minZ
+          : wall === "east"
+            ? room.maxX
+            : room.minX;
     const sign = wallSurfaceSign(wall);
     const axisValue = wall === "north" || wall === "south" ? point.y : point.x;
-    const displacement = clampBlueprintDisplacement((axisValue - base) / sign, room, wall);
-    onWallSegmentsChange(setSegmentDisplacement(wallSegments, wall, segmentId, displacement));
+    const displacement = clampBlueprintDisplacement(
+      (axisValue - base) / sign,
+      room,
+      wall,
+    );
+    onWallSegmentsChange(
+      setSegmentDisplacement(wallSegments, wall, segmentId, displacement),
+    );
   }
 
   function updateWallSegmentDrag(event: ReactPointerEvent<SVGSVGElement>) {
@@ -275,36 +330,64 @@ export function BlueprintView({
     setDraggingWallSegment(null);
   }
 
-  function beginConnectorDrag(connector: WallConnectorRef, event: ReactPointerEvent<SVGElement>) {
+  function beginConnectorDrag(
+    connector: WallConnectorRef,
+    event: ReactPointerEvent<SVGElement>,
+  ) {
     event.preventDefault();
     event.stopPropagation();
-    onSelect({ type: "wall-segment", wall: connector.wall, id: connector.segmentId });
-    if ((tool !== "select" && tool !== "move") || !wallSegments || !onWallSegmentsChange) return;
+    onSelect({
+      type: "wall-segment",
+      wall: connector.wall,
+      id: connector.segmentId,
+    });
+    if (
+      (tool !== "select" && tool !== "move") ||
+      !wallSegments ||
+      !onWallSegmentsChange
+    )
+      return;
     setDraggingConnector({ connector });
     svgRef.current?.setPointerCapture(event.pointerId);
     updateConnectorDragFromPointer(connector, event.clientX, event.clientY);
   }
 
-  function updateConnectorDragFromPointer(connector: WallConnectorRef, clientX: number, clientY: number) {
+  function updateConnectorDragFromPointer(
+    connector: WallConnectorRef,
+    clientX: number,
+    clientY: number,
+  ) {
     if (!wallSegments || !onWallSegmentsChange) return;
     const point = pointFromPointer(clientX, clientY);
     if (!point) return;
 
     const segments = wallSegments[connector.wall];
-    const index = segments.findIndex((segment) => segment.id === connector.segmentId);
-    const hasNeighbor = connector.side === "start" ? index > 0 : index >= 0 && index < segments.length - 1;
+    const index = segments.findIndex(
+      (segment) => segment.id === connector.segmentId,
+    );
+    const hasNeighbor =
+      connector.side === "start"
+        ? index > 0
+        : index >= 0 && index < segments.length - 1;
     if (!hasNeighbor) {
-      updateWallSegmentDragFromPointer(connector.wall, connector.segmentId, clientX, clientY);
+      updateWallSegmentDragFromPointer(
+        connector.wall,
+        connector.segmentId,
+        clientX,
+        clientY,
+      );
       return;
     }
 
-    const length = connector.wall === "north" || connector.wall === "south"
-      ? room.maxX - room.minX
-      : room.maxZ - room.minZ;
+    const length =
+      connector.wall === "north" || connector.wall === "south"
+        ? room.maxX - room.minX
+        : room.maxZ - room.minZ;
     if (length <= 0) return;
-    const along = connector.wall === "north" || connector.wall === "south"
-      ? point.x - room.minX
-      : point.y - room.minZ;
+    const along =
+      connector.wall === "north" || connector.wall === "south"
+        ? point.x - room.minX
+        : point.y - room.minZ;
     const next = setBlueprintConnectorBoundaryFraction(
       wallSegments,
       connector,
@@ -315,7 +398,11 @@ export function BlueprintView({
 
   function updateConnectorDrag(event: ReactPointerEvent<SVGSVGElement>) {
     if (!draggingConnector) return;
-    updateConnectorDragFromPointer(draggingConnector.connector, event.clientX, event.clientY);
+    updateConnectorDragFromPointer(
+      draggingConnector.connector,
+      event.clientX,
+      event.clientY,
+    );
   }
 
   function endConnectorDrag(event: ReactPointerEvent<SVGSVGElement>) {
@@ -398,13 +485,24 @@ export function BlueprintView({
     const point = pointFromPointer(event.clientX, event.clientY);
     if (!point) return;
 
-    const next = transformObjectFromPointer(objectTransform, point.x, point.y, room, wallSegments);
+    const next = transformObjectFromPointer(
+      objectTransform,
+      point.x,
+      point.y,
+      room,
+      wallSegments,
+    );
 
     if (objectTransform.target.type === "furniture") {
       onInstancesChange(
         instances.map((instance) =>
           instance.id === objectTransform.target.id
-            ? { ...instance, position: [next.position[0], 0, next.position[2]], rotation: next.rotation, scale: next.scale }
+            ? {
+                ...instance,
+                position: [next.position[0], 0, next.position[2]],
+                rotation: next.rotation,
+                scale: next.scale,
+              }
             : instance,
         ),
       );
@@ -416,7 +514,11 @@ export function BlueprintView({
         shape.id === objectTransform.target.id
           ? {
               ...shape,
-              position: [next.position[0], groundedShapeY(shape.kind, next.scale[1]), next.position[2]],
+              position: [
+                next.position[0],
+                groundedShapeY(shape.kind, next.scale[1]),
+                next.position[2],
+              ],
               rotation: next.rotation,
               scale: next.scale,
             }
@@ -456,7 +558,9 @@ export function BlueprintView({
     const cx = (room.minX + room.maxX) / 2;
     const cz = (room.minZ + room.maxZ) / 2;
     const pointerAlong =
-      target.wall === "north" || target.wall === "south" ? point.x - cx : point.y - cz;
+      target.wall === "north" || target.wall === "south"
+        ? point.x - cx
+        : point.y - cz;
 
     setOpeningDrag({
       kind,
@@ -478,19 +582,31 @@ export function BlueprintView({
     const cx = (room.minX + room.maxX) / 2;
     const cz = (room.minZ + room.maxZ) / 2;
     const pointerAlong =
-      openingDrag.wall === "north" || openingDrag.wall === "south" ? point.x - cx : point.y - cz;
+      openingDrag.wall === "north" || openingDrag.wall === "south"
+        ? point.x - cx
+        : point.y - cz;
 
     if (openingDrag.mode !== "move") {
       const rawWidth = Math.abs((pointerAlong - openingDrag.startOffset) * 2);
-      const nextWidth = clampOpeningWidthOnWallRun(room, wallSegments, openingDrag.wall, openingDrag.startOffset, rawWidth);
+      const nextWidth = clampOpeningWidthOnWallRun(
+        room,
+        wallSegments,
+        openingDrag.wall,
+        openingDrag.startOffset,
+        rawWidth,
+      );
 
       if (openingDrag.kind === "door" && onDoorsChange) {
         onDoorsChange(
-          doors.map((door) => (door.id === openingDrag.id ? { ...door, width: nextWidth } : door)),
+          doors.map((door) =>
+            door.id === openingDrag.id ? { ...door, width: nextWidth } : door,
+          ),
         );
       } else if (openingDrag.kind === "window" && onWindowsChange) {
         onWindowsChange(
-          windows.map((win) => (win.id === openingDrag.id ? { ...win, width: nextWidth } : win)),
+          windows.map((win) =>
+            win.id === openingDrag.id ? { ...win, width: nextWidth } : win,
+          ),
         );
       }
       return;
@@ -507,7 +623,9 @@ export function BlueprintView({
 
     if (openingDrag.kind === "door" && onDoorsChange) {
       onDoorsChange(
-        doors.map((door) => (door.id === openingDrag.id ? { ...door, offset: nextOffset } : door)),
+        doors.map((door) =>
+          door.id === openingDrag.id ? { ...door, offset: nextOffset } : door,
+        ),
       );
     } else if (openingDrag.kind === "window" && onWindowsChange) {
       onWindowsChange(
@@ -576,17 +694,29 @@ export function BlueprintView({
         onPointerDown={interactive ? () => onSelect(null) : undefined}
       >
         <defs>
-          <pattern id="bp-grid" width="0.5" height="0.5" patternUnits="userSpaceOnUse">
-            <path d="M .5 0 L 0 0 0 .5" fill="none" stroke="#B9C4C8" strokeWidth="0.018" />
+          <pattern
+            id="bp-grid"
+            width="0.5"
+            height="0.5"
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d="M .5 0 L 0 0 0 .5"
+              fill="none"
+              stroke="#B9C4C8"
+              strokeWidth="0.018"
+            />
           </pattern>
         </defs>
-        <rect x={view.x} y={view.y} width={view.width} height={view.height} fill="url(#bp-grid)" />
+        <rect
+          x={view.x}
+          y={view.y}
+          width={view.width}
+          height={view.height}
+          fill="url(#bp-grid)"
+        />
         {floorPolygonPoints ? (
-          <polygon
-            points={floorPolygonPoints}
-            fill="#FFF9EE"
-            stroke="none"
-          />
+          <polygon points={floorPolygonPoints} fill="#FFF9EE" stroke="none" />
         ) : (
           <rect
             x={room.minX}
@@ -599,10 +729,7 @@ export function BlueprintView({
           />
         )}
         {wallSegments ? (
-          <BlueprintWallOutline
-            room={room}
-            wallSegments={wallSegments}
-          />
+          <BlueprintWallOutline room={room} wallSegments={wallSegments} />
         ) : null}
         <BlueprintWallHandles
           room={room}
@@ -654,7 +781,8 @@ export function BlueprintView({
           onConnectorPointerDown={beginConnectorDrag}
         />
         {doors.map((door) => {
-          const isSelected = selected?.type === "door" && selected.id === door.id;
+          const isSelected =
+            selected?.type === "door" && selected.id === door.id;
           const seg = openingSegment(door, room, wallSegments?.[door.wall]);
           const arc = doorArcPath(door, room, seg);
           return (
@@ -676,14 +804,20 @@ export function BlueprintView({
                 stroke={isSelected ? "#3BA7FF" : "#9C7A52"}
                 strokeWidth="0.08"
                 strokeLinecap="butt"
-                onPointerDown={(event) => beginOpeningDrag("door", door, "move", event)}
+                onPointerDown={(event) =>
+                  beginOpeningDrag("door", door, "move", event)
+                }
                 style={{ cursor: "grab" }}
               />
               {isSelected ? (
                 <OpeningResizeHandles
                   segment={seg}
-                  onStart={(event) => beginOpeningDrag("door", door, "resize-start", event)}
-                  onEnd={(event) => beginOpeningDrag("door", door, "resize-end", event)}
+                  onStart={(event) =>
+                    beginOpeningDrag("door", door, "resize-start", event)
+                  }
+                  onEnd={(event) =>
+                    beginOpeningDrag("door", door, "resize-end", event)
+                  }
                 />
               ) : null}
               <path
@@ -697,7 +831,8 @@ export function BlueprintView({
           );
         })}
         {windows.map((win) => {
-          const isSelected = selected?.type === "window" && selected.id === win.id;
+          const isSelected =
+            selected?.type === "window" && selected.id === win.id;
           const seg = openingSegment(win, room, wallSegments?.[win.wall]);
           return (
             <g key={win.id}>
@@ -718,14 +853,20 @@ export function BlueprintView({
                 stroke={isSelected ? "#3BA7FF" : "#7DB7D9"}
                 strokeWidth="0.1"
                 strokeLinecap="butt"
-                onPointerDown={(event) => beginOpeningDrag("window", win, "move", event)}
+                onPointerDown={(event) =>
+                  beginOpeningDrag("window", win, "move", event)
+                }
                 style={{ cursor: "grab" }}
               />
               {isSelected ? (
                 <OpeningResizeHandles
                   segment={seg}
-                  onStart={(event) => beginOpeningDrag("window", win, "resize-start", event)}
-                  onEnd={(event) => beginOpeningDrag("window", win, "resize-end", event)}
+                  onStart={(event) =>
+                    beginOpeningDrag("window", win, "resize-start", event)
+                  }
+                  onEnd={(event) =>
+                    beginOpeningDrag("window", win, "resize-end", event)
+                  }
                 />
               ) : null}
               <line
@@ -742,16 +883,29 @@ export function BlueprintView({
           );
         })}
         {instances.map((instance) => {
-          const asset = assetById?.get(instance.assetId) ?? assets.find((item) => item.id === instance.assetId);
+          const asset =
+            assetById?.get(instance.assetId) ??
+            assets.find((item) => item.id === instance.assetId);
           const footprint = resolveFurnitureFootprint(asset);
-          const metrics = objectMetrics(instance.position, instance.rotation[1], instance.scale, footprint.width, footprint.depth);
-          const isSelected = selected?.type === "furniture" && selected.id === instance.id;
+          const metrics = objectMetrics(
+            instance.position,
+            instance.rotation[1],
+            instance.scale,
+            footprint.width,
+            footprint.depth,
+          );
+          const isSelected =
+            selected?.type === "furniture" && selected.id === instance.id;
           return (
             <g
               key={instance.id}
               transform={`translate(${instance.position[0]} ${instance.position[2]}) rotate(${(instance.rotation[1] * 180) / Math.PI}) scale(${instance.scale[0]} ${instance.scale[2]})`}
               onPointerDown={(event) =>
-                beginObjectDrag({ type: "furniture", id: instance.id }, metrics, event)
+                beginObjectDrag(
+                  { type: "furniture", id: instance.id },
+                  metrics,
+                  event,
+                )
               }
               className={isSelected ? "cursor-move" : "cursor-pointer"}
             >
@@ -765,23 +919,39 @@ export function BlueprintView({
                 stroke="#14232B"
                 strokeWidth="0.045"
               />
-              <text y="0.05" textAnchor="middle" fontSize="0.18" fill={isSelected ? "#FFF9EE" : "#071014"}>
+              <text
+                y="0.05"
+                textAnchor="middle"
+                fontSize="0.18"
+                fill={isSelected ? "#FFF9EE" : "#071014"}
+              >
                 {asset?.name.split(" ")[0] ?? instance.name.split(" ")[0]}
               </text>
             </g>
           );
         })}
         {shapes.map((shape) => {
-          const isSelected = selected?.type === "shape" && selected.id === shape.id;
-          const metrics = objectMetrics(shape.position, shape.rotation[1], shape.scale, 1, 1);
+          const isSelected =
+            selected?.type === "shape" && selected.id === shape.id;
+          const metrics = objectMetrics(
+            shape.position,
+            shape.rotation[1],
+            shape.scale,
+            1,
+            1,
+          );
           return (
             <g
               key={shape.id}
               transform={`translate(${shape.position[0]} ${shape.position[2]}) rotate(${(shape.rotation[1] * 180) / Math.PI}) scale(${shape.scale[0]} ${shape.scale[2]})`}
-              onPointerDown={(event) => beginObjectDrag({ type: "shape", id: shape.id }, metrics, event)}
+              onPointerDown={(event) =>
+                beginObjectDrag({ type: "shape", id: shape.id }, metrics, event)
+              }
               className={isSelected ? "cursor-move" : "cursor-pointer"}
             >
-              {shape.kind === "sphere" || shape.kind === "cylinder" || shape.kind === "cone" ? (
+              {shape.kind === "sphere" ||
+              shape.kind === "cylinder" ||
+              shape.kind === "cone" ? (
                 <circle
                   r="0.5"
                   fill={isSelected ? "#D85E2E" : shape.color}
@@ -802,7 +972,12 @@ export function BlueprintView({
                   opacity="0.92"
                 />
               )}
-              <text y="0.05" textAnchor="middle" fontSize="0.18" fill={isSelected ? "#FFF9EE" : "#071014"}>
+              <text
+                y="0.05"
+                textAnchor="middle"
+                fontSize="0.18"
+                fill={isSelected ? "#FFF9EE" : "#071014"}
+              >
                 {shape.kind}
               </text>
             </g>
@@ -831,7 +1006,15 @@ function transformObjectFromPointer(
 ) {
   if (session.mode === "move") {
     return {
-      position: clampToFloor([pointerX - session.grabOffsetX, session.y, pointerZ - session.grabOffsetZ], room, wallSegments),
+      position: clampToFloor(
+        [
+          pointerX - session.grabOffsetX,
+          session.y,
+          pointerZ - session.grabOffsetZ,
+        ],
+        room,
+        wallSegments,
+      ),
       rotation: [0, session.startRotationY, 0] as Vec3,
       scale: session.startScale,
     };
@@ -842,10 +1025,17 @@ function transformObjectFromPointer(
       session.startPointer.z - session.startPosition[2],
       session.startPointer.x - session.startPosition[0],
     );
-    const currentAngle = Math.atan2(pointerZ - session.startPosition[2], pointerX - session.startPosition[0]);
+    const currentAngle = Math.atan2(
+      pointerZ - session.startPosition[2],
+      pointerX - session.startPosition[0],
+    );
     return {
       position: session.startPosition,
-      rotation: [0, session.startRotationY + currentAngle - startAngle, 0] as Vec3,
+      rotation: [
+        0,
+        session.startRotationY + currentAngle - startAngle,
+        0,
+      ] as Vec3,
       scale: session.startScale,
     };
   }
@@ -866,7 +1056,10 @@ function transformObjectFromPointer(
     session.baseWidth,
     session.baseDepth,
   );
-  const factor = Math.min(5, Math.max(0.2, currentDistance / Math.max(0.001, startDistance)));
+  const factor = Math.min(
+    5,
+    Math.max(0.2, currentDistance / Math.max(0.001, startDistance)),
+  );
 
   return {
     position: session.startPosition,
@@ -893,10 +1086,19 @@ function objectScaleDistance(
   const sin = Math.sin(-rotationY);
   const localX = dx * cos - dz * sin;
   const localZ = dx * sin + dz * cos;
-  return Math.max(Math.abs(localX) / Math.max(0.001, baseWidth / 2), Math.abs(localZ) / Math.max(0.001, baseDepth / 2));
+  return Math.max(
+    Math.abs(localX) / Math.max(0.001, baseWidth / 2),
+    Math.abs(localZ) / Math.max(0.001, baseDepth / 2),
+  );
 }
 
-function objectMetrics(position: Vec3, rotationY: number, scale: Vec3, width: number, depth: number): BlueprintObjectMetrics {
+function objectMetrics(
+  position: Vec3,
+  rotationY: number,
+  scale: Vec3,
+  width: number,
+  depth: number,
+): BlueprintObjectMetrics {
   return { position, rotationY, scale, width, depth };
 }
 
@@ -922,16 +1124,24 @@ function BlueprintObjectHandles({
     event: ReactPointerEvent<SVGElement>,
   ) => void;
 }) {
-  if (!selected || (selected.type !== "furniture" && selected.type !== "shape")) return null;
+  if (!selected || (selected.type !== "furniture" && selected.type !== "shape"))
+    return null;
 
   const target = selected;
-  const metrics = selected.type === "furniture"
-    ? furnitureHandleMetrics(selected.id, instances, assets, assetById)
-    : shapeHandleMetrics(selected.id, shapes);
+  const metrics =
+    selected.type === "furniture"
+      ? furnitureHandleMetrics(selected.id, instances, assets, assetById)
+      : shapeHandleMetrics(selected.id, shapes);
   if (!metrics) return null;
 
-  const visibleWidth = Math.max(0.18, metrics.width * Math.abs(metrics.scale[0]));
-  const visibleDepth = Math.max(0.18, metrics.depth * Math.abs(metrics.scale[2]));
+  const visibleWidth = Math.max(
+    0.18,
+    metrics.width * Math.abs(metrics.scale[0]),
+  );
+  const visibleDepth = Math.max(
+    0.18,
+    metrics.depth * Math.abs(metrics.scale[2]),
+  );
   const rotationDeg = (metrics.rotationY * 180) / Math.PI;
   const scaleHandleX = visibleWidth / 2;
   const scaleHandleZ = visibleDepth / 2;
@@ -973,7 +1183,9 @@ function BlueprintObjectHandles({
             fill="#3BA7FF"
             stroke="#071014"
             strokeWidth="0.035"
-            onPointerDown={(event) => onPointerDown("rotate", target, metrics, event)}
+            onPointerDown={(event) =>
+              onPointerDown("rotate", target, metrics, event)
+            }
             style={{ cursor: "grab" }}
           />
         </>
@@ -996,7 +1208,9 @@ function BlueprintObjectHandles({
               fill="#FFF9EE"
               stroke="#3BA7FF"
               strokeWidth="0.045"
-              onPointerDown={(event) => onPointerDown("scale", target, metrics, event)}
+              onPointerDown={(event) =>
+                onPointerDown("scale", target, metrics, event)
+              }
               style={{ cursor: "nwse-resize" }}
             />
           ))}
@@ -1014,12 +1228,23 @@ function furnitureHandleMetrics(
 ): BlueprintObjectMetrics | null {
   const instance = instances.find((item) => item.id === id);
   if (!instance) return null;
-  const asset = assetById?.get(instance.assetId) ?? assets.find((item) => item.id === instance.assetId);
+  const asset =
+    assetById?.get(instance.assetId) ??
+    assets.find((item) => item.id === instance.assetId);
   const footprint = resolveFurnitureFootprint(asset);
-  return objectMetrics(instance.position, instance.rotation[1], instance.scale, footprint.width, footprint.depth);
+  return objectMetrics(
+    instance.position,
+    instance.rotation[1],
+    instance.scale,
+    footprint.width,
+    footprint.depth,
+  );
 }
 
-function shapeHandleMetrics(id: string, shapes: CustomShape[]): BlueprintObjectMetrics | null {
+function shapeHandleMetrics(
+  id: string,
+  shapes: CustomShape[],
+): BlueprintObjectMetrics | null {
   const shape = shapes.find((item) => item.id === id);
   if (!shape) return null;
   return objectMetrics(shape.position, shape.rotation[1], shape.scale, 1, 1);
@@ -1072,8 +1297,8 @@ function BlueprintWallOutline({
 }) {
   return (
     <g pointerEvents="none">
-      {(["north", "south", "east", "west"] as WallId[]).flatMap((wall) =>
-        wallDisplayLines(wall, room, wallSegments).map((line, index) => (
+      {(["north", "south", "east", "west"] as WallId[]).flatMap((wall) => {
+        return wallDisplayLines(wall, room, wallSegments).map((line, index) => (
           <line
             key={`${wall}-${index}`}
             x1={line.x1}
@@ -1084,8 +1309,8 @@ function BlueprintWallOutline({
             strokeWidth="0.18"
             strokeLinecap="butt"
           />
-        )),
-      )}
+        ));
+      })}
     </g>
   );
 }
@@ -1160,11 +1385,16 @@ function BlueprintWallHandles({
         const dynamicLines = wallSegments
           ? wallDisplayLines(wall.id, room, wallSegments)
           : [{ x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2 }];
-        const handleLine = longestLine(dynamicLines) ?? { x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2 };
+        const handleLine = longestLine(dynamicLines) ?? {
+          x1: wall.x1,
+          y1: wall.y1,
+          x2: wall.x2,
+          y2: wall.y2,
+        };
         const handleMid = lineMidpoint(handleLine);
         return (
           <g key={wall.id}>
-            {dynamicLines.map((line, index) => (
+            {dynamicLines.map((line, index) =>
               active ? (
                 <line
                   key={`${wall.id}-display-${index}`}
@@ -1178,8 +1408,8 @@ function BlueprintWallHandles({
                   opacity="1"
                   pointerEvents="none"
                 />
-              ) : null
-            ))}
+              ) : null,
+            )}
             {dynamicLines.map((line, index) => (
               <line
                 key={`${wall.id}-hit-${index}`}
@@ -1194,7 +1424,9 @@ function BlueprintWallHandles({
                 style={{ cursor: wall.cursor }}
               />
             ))}
-            {active ? <WallLengthLabel line={handleLine} offset={0.34} /> : null}
+            {active ? (
+              <WallLengthLabel line={handleLine} offset={0.34} />
+            ) : null}
             {active ? (
               <rect
                 x={handleMid.x - 0.18}
@@ -1218,7 +1450,10 @@ function BlueprintWallHandles({
 
 type BlueprintLine = { x1: number; y1: number; x2: number; y2: number };
 
-function floorBoundsFromPolygon(room: RoomBounds, polygon: Array<{ x: number; z: number }>) {
+function floorBoundsFromPolygon(
+  room: RoomBounds,
+  polygon: Array<{ x: number; z: number }>,
+) {
   let minX = room.minX;
   let maxX = room.maxX;
   let minZ = room.minZ;
@@ -1242,7 +1477,13 @@ function fitViewToAspect(
   view: { x: number; y: number; width: number; height: number },
   aspect: number,
 ) {
-  if (!Number.isFinite(aspect) || aspect <= 0 || view.width <= 0 || view.height <= 0) return view;
+  if (
+    !Number.isFinite(aspect) ||
+    aspect <= 0 ||
+    view.width <= 0 ||
+    view.height <= 0
+  )
+    return view;
 
   const viewAspect = view.width / view.height;
   if (Math.abs(viewAspect - aspect) < 0.001) return view;
@@ -1266,7 +1507,11 @@ function fitViewToAspect(
   };
 }
 
-function wallDisplayLines(wall: WallId, room: RoomBounds, wallSegments: WallSegmentation): BlueprintLine[] {
+function wallDisplayLines(
+  wall: WallId,
+  room: RoomBounds,
+  wallSegments: WallSegmentation,
+): BlueprintLine[] {
   const segments = wallSegments[wall];
   if (!segments?.length) return [];
   const lines: BlueprintLine[] = segments
@@ -1301,7 +1546,13 @@ function lineMidpoint(line: BlueprintLine) {
   };
 }
 
-function WallLengthLabel({ line, offset }: { line: BlueprintLine; offset: number }) {
+function WallLengthLabel({
+  line,
+  offset,
+}: {
+  line: BlueprintLine;
+  offset: number;
+}) {
   const midpoint = lineMidpoint(line);
   const dx = line.x2 - line.x1;
   const dy = line.y2 - line.y1;
@@ -1340,7 +1591,8 @@ function WallLengthLabel({ line, offset }: { line: BlueprintLine; offset: number
 function footprintFor(primitive?: FurnitureAsset["primitive"]) {
   if (primitive === "table") return { width: 1.15, depth: 1.15 };
   if (primitive === "chair") return { width: 0.7, depth: 0.75 };
-  if (primitive === "lamp" || primitive === "plant") return { width: 0.55, depth: 0.55 };
+  if (primitive === "lamp" || primitive === "plant")
+    return { width: 0.55, depth: 0.55 };
   if (primitive === "cabinet") return { width: 1.35, depth: 0.5 };
   return { width: 1.65, depth: 0.9 };
 }
@@ -1392,16 +1644,35 @@ function openingSegment(
   const cx = (room.minX + room.maxX) / 2;
   const cz = (room.minZ + room.maxZ) / 2;
   const half = opening.width / 2;
-  const { dx, dz } = applySegmentationToOpening(room, opening.wall, opening.offset, segments);
+  const { dx, dz } = applySegmentationToOpening(
+    room,
+    opening.wall,
+    opening.offset,
+    segments,
+  );
   if (opening.wall === "north" || opening.wall === "south") {
     const z = (opening.wall === "north" ? room.maxZ : room.minZ) + dz;
-    return { x1: cx + opening.offset - half, y1: z, x2: cx + opening.offset + half, y2: z };
+    return {
+      x1: cx + opening.offset - half,
+      y1: z,
+      x2: cx + opening.offset + half,
+      y2: z,
+    };
   }
   const x = (opening.wall === "east" ? room.maxX : room.minX) + dx;
-  return { x1: x, y1: cz + opening.offset - half, x2: x, y2: cz + opening.offset + half };
+  return {
+    x1: x,
+    y1: cz + opening.offset - half,
+    x2: x,
+    y2: cz + opening.offset + half,
+  };
 }
 
-function doorArcPath(door: Door, room: RoomBounds, seg: { x1: number; y1: number; x2: number; y2: number }) {
+function doorArcPath(
+  door: Door,
+  room: RoomBounds,
+  seg: { x1: number; y1: number; x2: number; y2: number },
+) {
   const radius = door.width;
   let normalX = 0;
   let normalY = 0;
@@ -1429,12 +1700,15 @@ function connectorLineForRef(
   room: RoomBounds,
   segments: WallSegment[],
 ): { x1: number; y1: number; x2: number; y2: number } | null {
-  const index = segments.findIndex((segment) => segment.id === connector.segmentId);
+  const index = segments.findIndex(
+    (segment) => segment.id === connector.segmentId,
+  );
   if (index === -1) return null;
   const segment = segments[index];
   if (connector.side === "start") {
     const previous = segments[index - 1];
-    if (previous) return connectorLineCoords(connector.wall, previous, segment, room);
+    if (previous)
+      return connectorLineCoords(connector.wall, previous, segment, room);
     if (segment.displacement >= -0.001) return null;
     return endConnectorLineCoords(connector.wall, segment, "start", room);
   }
@@ -1449,8 +1723,16 @@ function wallSurfaceSign(wall: WallId): number {
   return 1;
 }
 
-function clampOpeningWidth(room: RoomBounds, wall: WallId, offset: number, width: number) {
-  const length = wall === "east" || wall === "west" ? room.maxZ - room.minZ : room.maxX - room.minX;
+function clampOpeningWidth(
+  room: RoomBounds,
+  wall: WallId,
+  offset: number,
+  width: number,
+) {
+  const length =
+    wall === "east" || wall === "west"
+      ? room.maxZ - room.minZ
+      : room.maxX - room.minX;
   const maxWidth = Math.max(0.2, 2 * (length / 2 - Math.abs(offset)));
   return Math.min(maxWidth, Math.max(0.25, width));
 }
@@ -1466,12 +1748,22 @@ function clampOpeningOffsetOnWallRun(
   const segments = wallSegments?.[wall];
   if (!segments?.length) return clampWallOffset(room, wall, nextOffset, width);
 
-  const length = wall === "east" || wall === "west" ? room.maxZ - room.minZ : room.maxX - room.minX;
-  const center = wall === "north" || wall === "south"
-    ? (room.minX + room.maxX) / 2
-    : (room.minZ + room.maxZ) / 2;
-  const currentFraction = Math.min(1, Math.max(0, currentOffset / length + 0.5));
-  const index = segments.findIndex((segment) => currentFraction >= segment.start && currentFraction <= segment.end);
+  const length =
+    wall === "east" || wall === "west"
+      ? room.maxZ - room.minZ
+      : room.maxX - room.minX;
+  const center =
+    wall === "north" || wall === "south"
+      ? (room.minX + room.maxX) / 2
+      : (room.minZ + room.maxZ) / 2;
+  const currentFraction = Math.min(
+    1,
+    Math.max(0, currentOffset / length + 0.5),
+  );
+  const index = segments.findIndex(
+    (segment) =>
+      currentFraction >= segment.start && currentFraction <= segment.end,
+  );
   if (index === -1) return clampWallOffset(room, wall, nextOffset, width);
 
   const base = segments[index];
@@ -1479,19 +1771,34 @@ function clampOpeningOffsetOnWallRun(
   let endIndex = index;
 
   for (let scan = index - 1; scan >= 0; scan -= 1) {
-    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001) break;
+    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001)
+      break;
     startIndex = scan;
   }
 
   for (let scan = index + 1; scan < segments.length; scan += 1) {
-    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001) break;
+    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001)
+      break;
     endIndex = scan;
   }
 
-  const startLine = segmentLineCoords(wall, segments[startIndex], room, wallSegments);
-  const endLine = segmentLineCoords(wall, segments[endIndex], room, wallSegments);
-  const minOffset = (wall === "north" || wall === "south" ? startLine.x1 : startLine.y1) - center;
-  const maxOffset = (wall === "north" || wall === "south" ? endLine.x2 : endLine.y2) - center;
+  const startLine = segmentLineCoords(
+    wall,
+    segments[startIndex],
+    room,
+    wallSegments,
+  );
+  const endLine = segmentLineCoords(
+    wall,
+    segments[endIndex],
+    room,
+    wallSegments,
+  );
+  const minOffset =
+    (wall === "north" || wall === "south" ? startLine.x1 : startLine.y1) -
+    center;
+  const maxOffset =
+    (wall === "north" || wall === "south" ? endLine.x2 : endLine.y2) - center;
   const min = minOffset + width / 2;
   const max = maxOffset - width / 2;
   if (max < min) return (min + max) / 2;
@@ -1507,7 +1814,14 @@ function clampOpeningWidthOnWallRun(
 ) {
   const bounds = openingWallRunBounds(room, wallSegments, wall, currentOffset);
   if (!bounds) return clampOpeningWidth(room, wall, currentOffset, width);
-  const maxWidth = Math.max(0.25, 2 * Math.min(currentOffset - bounds.minOffset, bounds.maxOffset - currentOffset));
+  const maxWidth = Math.max(
+    0.25,
+    2 *
+      Math.min(
+        currentOffset - bounds.minOffset,
+        bounds.maxOffset - currentOffset,
+      ),
+  );
   return Math.min(maxWidth, Math.max(0.25, width));
 }
 
@@ -1519,12 +1833,22 @@ function openingWallRunBounds(
 ) {
   const segments = wallSegments?.[wall];
   if (!segments?.length) return null;
-  const length = wall === "east" || wall === "west" ? room.maxZ - room.minZ : room.maxX - room.minX;
-  const center = wall === "north" || wall === "south"
-    ? (room.minX + room.maxX) / 2
-    : (room.minZ + room.maxZ) / 2;
-  const currentFraction = Math.min(1, Math.max(0, currentOffset / length + 0.5));
-  const index = segments.findIndex((segment) => currentFraction >= segment.start && currentFraction <= segment.end);
+  const length =
+    wall === "east" || wall === "west"
+      ? room.maxZ - room.minZ
+      : room.maxX - room.minX;
+  const center =
+    wall === "north" || wall === "south"
+      ? (room.minX + room.maxX) / 2
+      : (room.minZ + room.maxZ) / 2;
+  const currentFraction = Math.min(
+    1,
+    Math.max(0, currentOffset / length + 0.5),
+  );
+  const index = segments.findIndex(
+    (segment) =>
+      currentFraction >= segment.start && currentFraction <= segment.end,
+  );
   if (index === -1) return null;
 
   const base = segments[index];
@@ -1532,24 +1856,43 @@ function openingWallRunBounds(
   let endIndex = index;
 
   for (let scan = index - 1; scan >= 0; scan -= 1) {
-    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001) break;
+    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001)
+      break;
     startIndex = scan;
   }
 
   for (let scan = index + 1; scan < segments.length; scan += 1) {
-    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001) break;
+    if (Math.abs(segments[scan].displacement - base.displacement) > 0.001)
+      break;
     endIndex = scan;
   }
 
-  const startLine = segmentLineCoords(wall, segments[startIndex], room, wallSegments);
-  const endLine = segmentLineCoords(wall, segments[endIndex], room, wallSegments);
+  const startLine = segmentLineCoords(
+    wall,
+    segments[startIndex],
+    room,
+    wallSegments,
+  );
+  const endLine = segmentLineCoords(
+    wall,
+    segments[endIndex],
+    room,
+    wallSegments,
+  );
   return {
-    minOffset: (wall === "north" || wall === "south" ? startLine.x1 : startLine.y1) - center,
-    maxOffset: (wall === "north" || wall === "south" ? endLine.x2 : endLine.y2) - center,
+    minOffset:
+      (wall === "north" || wall === "south" ? startLine.x1 : startLine.y1) -
+      center,
+    maxOffset:
+      (wall === "north" || wall === "south" ? endLine.x2 : endLine.y2) - center,
   };
 }
 
-function clampBlueprintDisplacement(value: number, room: RoomBounds, wall: WallId): number {
+function clampBlueprintDisplacement(
+  value: number,
+  room: RoomBounds,
+  wall: WallId,
+): number {
   const inwardLimit =
     wall === "east" || wall === "west"
       ? (room.maxX - room.minX) * 0.7
@@ -1563,7 +1906,9 @@ function setBlueprintConnectorBoundaryFraction(
   fraction: number,
 ): WallSegmentation {
   const segments = segmentation[connector.wall];
-  const index = segments.findIndex((segment) => segment.id === connector.segmentId);
+  const index = segments.findIndex(
+    (segment) => segment.id === connector.segmentId,
+  );
   if (index === -1) return segmentation;
   const segment = segments[index];
   const previous = segments[index - 1];
@@ -1572,7 +1917,10 @@ function setBlueprintConnectorBoundaryFraction(
 
   if (connector.side === "start") {
     if (!previous) return segmentation;
-    const clamped = Math.min(segment.end - minGap, Math.max(previous.start + minGap, fraction));
+    const clamped = Math.min(
+      segment.end - minGap,
+      Math.max(previous.start + minGap, fraction),
+    );
     return {
       ...segmentation,
       [connector.wall]: segments.map((item, itemIndex) => {
@@ -1584,7 +1932,10 @@ function setBlueprintConnectorBoundaryFraction(
   }
 
   if (!next) return segmentation;
-  const clamped = Math.min(next.end - minGap, Math.max(segment.start + minGap, fraction));
+  const clamped = Math.min(
+    next.end - minGap,
+    Math.max(segment.start + minGap, fraction),
+  );
   return {
     ...segmentation,
     [connector.wall]: segments.map((item, itemIndex) => {
@@ -1605,18 +1956,34 @@ function segmentLineCoords(
   if (wall === "north") {
     const baseZ = room.maxZ + sign * segment.displacement;
     return {
-      x1: segment.start <= 0.001 ? room.minX + (wallSegments?.west[(wallSegments?.west.length ?? 1) - 1]?.displacement ?? 0) : room.minX + segment.start * (room.maxX - room.minX),
+      x1:
+        segment.start <= 0.001
+          ? room.minX +
+            (wallSegments?.west[(wallSegments?.west.length ?? 1) - 1]
+              ?.displacement ?? 0)
+          : room.minX + segment.start * (room.maxX - room.minX),
       y1: baseZ,
-      x2: segment.end >= 0.999 ? room.maxX - (wallSegments?.east[(wallSegments?.east.length ?? 1) - 1]?.displacement ?? 0) : room.minX + segment.end * (room.maxX - room.minX),
+      x2:
+        segment.end >= 0.999
+          ? room.maxX -
+            (wallSegments?.east[(wallSegments?.east.length ?? 1) - 1]
+              ?.displacement ?? 0)
+          : room.minX + segment.end * (room.maxX - room.minX),
       y2: baseZ,
     };
   }
   if (wall === "south") {
     const baseZ = room.minZ + sign * segment.displacement;
     return {
-      x1: segment.start <= 0.001 ? room.minX + (wallSegments?.west[0]?.displacement ?? 0) : room.minX + segment.start * (room.maxX - room.minX),
+      x1:
+        segment.start <= 0.001
+          ? room.minX + (wallSegments?.west[0]?.displacement ?? 0)
+          : room.minX + segment.start * (room.maxX - room.minX),
       y1: baseZ,
-      x2: segment.end >= 0.999 ? room.maxX - (wallSegments?.east[0]?.displacement ?? 0) : room.minX + segment.end * (room.maxX - room.minX),
+      x2:
+        segment.end >= 0.999
+          ? room.maxX - (wallSegments?.east[0]?.displacement ?? 0)
+          : room.minX + segment.end * (room.maxX - room.minX),
       y2: baseZ,
     };
   }
@@ -1624,17 +1991,33 @@ function segmentLineCoords(
     const baseX = room.maxX + sign * segment.displacement;
     return {
       x1: baseX,
-      y1: segment.start <= 0.001 ? room.minZ + (wallSegments?.south[(wallSegments?.south.length ?? 1) - 1]?.displacement ?? 0) : room.minZ + segment.start * (room.maxZ - room.minZ),
+      y1:
+        segment.start <= 0.001
+          ? room.minZ +
+            (wallSegments?.south[(wallSegments?.south.length ?? 1) - 1]
+              ?.displacement ?? 0)
+          : room.minZ + segment.start * (room.maxZ - room.minZ),
       x2: baseX,
-      y2: segment.end >= 0.999 ? room.maxZ - (wallSegments?.north[(wallSegments?.north.length ?? 1) - 1]?.displacement ?? 0) : room.minZ + segment.end * (room.maxZ - room.minZ),
+      y2:
+        segment.end >= 0.999
+          ? room.maxZ -
+            (wallSegments?.north[(wallSegments?.north.length ?? 1) - 1]
+              ?.displacement ?? 0)
+          : room.minZ + segment.end * (room.maxZ - room.minZ),
     };
   }
   const baseX = room.minX + sign * segment.displacement;
   return {
     x1: baseX,
-    y1: segment.start <= 0.001 ? room.minZ + (wallSegments?.south[0]?.displacement ?? 0) : room.minZ + segment.start * (room.maxZ - room.minZ),
+    y1:
+      segment.start <= 0.001
+        ? room.minZ + (wallSegments?.south[0]?.displacement ?? 0)
+        : room.minZ + segment.start * (room.maxZ - room.minZ),
     x2: baseX,
-    y2: segment.end >= 0.999 ? room.maxZ - (wallSegments?.north[0]?.displacement ?? 0) : room.minZ + segment.end * (room.maxZ - room.minZ),
+    y2:
+      segment.end >= 0.999
+        ? room.maxZ - (wallSegments?.north[0]?.displacement ?? 0)
+        : room.minZ + segment.end * (room.maxZ - room.minZ),
   };
 }
 
@@ -1645,7 +2028,8 @@ function rawSegmentLineCoords(
 ): { x1: number; y1: number; x2: number; y2: number } {
   const sign = wallSurfaceSign(wall);
   if (wall === "north" || wall === "south") {
-    const y = (wall === "north" ? room.maxZ : room.minZ) + sign * segment.displacement;
+    const y =
+      (wall === "north" ? room.maxZ : room.minZ) + sign * segment.displacement;
     return {
       x1: room.minX + segment.start * (room.maxX - room.minX),
       y1: y,
@@ -1654,7 +2038,8 @@ function rawSegmentLineCoords(
     };
   }
 
-  const x = (wall === "east" ? room.maxX : room.minX) + sign * segment.displacement;
+  const x =
+    (wall === "east" ? room.maxX : room.minX) + sign * segment.displacement;
   return {
     x1: x,
     y1: room.minZ + segment.start * (room.maxZ - room.minZ),
@@ -1702,8 +2087,15 @@ function BlueprintWallSegments({
   wallSegments?: WallSegmentation;
   selected: SelectedRef;
   onSelect: (selected: SelectedRef) => void;
-  onSegmentPointerDown?: (wall: WallId, segmentId: string, event: ReactPointerEvent<SVGElement>) => void;
-  onConnectorPointerDown?: (connector: WallConnectorRef, event: ReactPointerEvent<SVGElement>) => void;
+  onSegmentPointerDown?: (
+    wall: WallId,
+    segmentId: string,
+    event: ReactPointerEvent<SVGElement>,
+  ) => void;
+  onConnectorPointerDown?: (
+    connector: WallConnectorRef,
+    event: ReactPointerEvent<SVGElement>,
+  ) => void;
 }) {
   if (!wallSegments) return null;
   return (
@@ -1714,8 +2106,14 @@ function BlueprintWallSegments({
         return (
           <g key={wall}>
             {segments.map((segment) => {
-              const isSelected = selected?.type === "wall-segment" && selected.id === segment.id;
-              const coords = segmentLineCoords(wall, segment, room, wallSegments);
+              const isSelected =
+                selected?.type === "wall-segment" && selected.id === segment.id;
+              const coords = segmentLineCoords(
+                wall,
+                segment,
+                room,
+                wallSegments,
+              );
               const hitCoords = rawSegmentLineCoords(wall, segment, room);
               return (
                 <g key={segment.id}>
@@ -1743,17 +2141,26 @@ function BlueprintWallSegments({
                       onSelect({ type: "wall-segment", wall, id: segment.id });
                       onSegmentPointerDown?.(wall, segment.id, event);
                     }}
-                    style={{ cursor: wall === "north" || wall === "south" ? "ns-resize" : "ew-resize" }}
+                    style={{
+                      cursor:
+                        wall === "north" || wall === "south"
+                          ? "ns-resize"
+                          : "ew-resize",
+                    }}
                   />
-                  {isSelected ? <WallLengthLabel line={coords} offset={0.34} /> : null}
+                  {isSelected ? (
+                    <WallLengthLabel line={coords} offset={0.34} />
+                  ) : null}
                 </g>
               );
             })}
             {segments.slice(0, -1).map((segment, index) => {
               const next = segments[index + 1];
-              if (Math.abs(next.displacement - segment.displacement) < 0.001) return null;
+              if (Math.abs(next.displacement - segment.displacement) < 0.001)
+                return null;
               const coords = connectorLineCoords(wall, segment, next, room);
-              const isSelected = selected?.type === "wall-segment" && selected.id === segment.id;
+              const isSelected =
+                selected?.type === "wall-segment" && selected.id === segment.id;
               return (
                 <g key={`${segment.id}-${next.id}-connector`}>
                   {isSelected ? (
@@ -1780,9 +2187,17 @@ function BlueprintWallSegments({
                     strokeWidth="0.42"
                     strokeLinecap="butt"
                     onPointerDown={(event) =>
-                      onConnectorPointerDown?.({ wall, segmentId: segment.id, side: "end" }, event)
+                      onConnectorPointerDown?.(
+                        { wall, segmentId: segment.id, side: "end" },
+                        event,
+                      )
                     }
-                    style={{ cursor: wall === "north" || wall === "south" ? "ew-resize" : "ns-resize" }}
+                    style={{
+                      cursor:
+                        wall === "north" || wall === "south"
+                          ? "ew-resize"
+                          : "ns-resize",
+                    }}
                   />
                 </g>
               );

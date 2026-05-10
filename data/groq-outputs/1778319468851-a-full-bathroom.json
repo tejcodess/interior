@@ -1,0 +1,92 @@
+{
+  "prompt": "a full bathroom",
+  "raw": "[\n  {\"assetKey\": \"dresser\", \"x\": -2.5, \"z\": 1.8, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Vanity\", \"rationale\": \"a full bathroom typically includes a dresser for storage, placed near the sink for convenience\"},\n  {\"assetKey\": \"nightstand\", \"x\": 0, \"z\": 2.2, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Cabinet\", \"rationale\": \"a full bathroom often features a nightstand as a cabinet to store toiletries and towels, providing ample storage\"},\n  {\"assetKey\": \"lampTable\", \"x\": 1.5, \"z\": 0.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Sconce\", \"rationale\": \"a full bathroom may include a lampTable to provide warm and cozy lighting, creating a relaxing atmosphere\"},\n  {\"assetKey\": \"shelfSmall\", \"x\": -1.2, \"z\": -1.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Shelf\", \"rationale\": \"a full bathroom often incorporates a shelfSmall to hold bathroom essentials, keeping them within easy reach\"},\n  {\"assetKey\": \"mirrorLarge\", \"x\": 0, \"z\": -2.3, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Mirror\", \"rationale\": \"a full bathroom typically features a mirrorLarge for grooming and self-care, a essential element in any bathroom\"},\n  {\"assetKey\": \"plantSmall\", \"x\": 2.2, \"z\": 1.2, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Plant\", \"rationale\": \"a full bathroom may include a plantSmall to bring in a touch of nature and serenity, enhancing the overall ambiance\"},\n  {\"assetKey\": \"rugSmall\", \"x\": -0.5, \"z\": 0.8, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Mat\", \"rationale\": \"a full bathroom often features a rugSmall as a bathroom mat, providing comfort and warmth underfoot\"}\n]",
+  "cleaned": "[\n  {\"assetKey\": \"dresser\", \"x\": -2.5, \"z\": 1.8, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Vanity\", \"rationale\": \"a full bathroom typically includes a dresser for storage, placed near the sink for convenience\"},\n  {\"assetKey\": \"nightstand\", \"x\": 0, \"z\": 2.2, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Cabinet\", \"rationale\": \"a full bathroom often features a nightstand as a cabinet to store toiletries and towels, providing ample storage\"},\n  {\"assetKey\": \"lampTable\", \"x\": 1.5, \"z\": 0.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Sconce\", \"rationale\": \"a full bathroom may include a lampTable to provide warm and cozy lighting, creating a relaxing atmosphere\"},\n  {\"assetKey\": \"shelfSmall\", \"x\": -1.2, \"z\": -1.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Shelf\", \"rationale\": \"a full bathroom often incorporates a shelfSmall to hold bathroom essentials, keeping them within easy reach\"},\n  {\"assetKey\": \"mirrorLarge\", \"x\": 0, \"z\": -2.3, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Mirror\", \"rationale\": \"a full bathroom typically features a mirrorLarge for grooming and self-care, a essential element in any bathroom\"},\n  {\"assetKey\": \"plantSmall\", \"x\": 2.2, \"z\": 1.2, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Plant\", \"rationale\": \"a full bathroom may include a plantSmall to bring in a touch of nature and serenity, enhancing the overall ambiance\"},\n  {\"assetKey\": \"rugSmall\", \"x\": -0.5, \"z\": 0.8, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bathroom Mat\", \"rationale\": \"a full bathroom often features a rugSmall as a bathroom mat, providing comfort and warmth underfoot\"}\n]",
+  "items": [
+    {
+      "assetKey": "dresser",
+      "x": -2.5,
+      "z": 1.8,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Vanity",
+      "rationale": "a full bathroom typically includes a dresser for storage, placed near the sink for convenience",
+      "assetId": "side-table-drawers",
+      "assetName": "Side Table Drawers",
+      "modelUrl": "/assets/furniture/sideTableDrawers.glb"
+    },
+    {
+      "assetKey": "nightstand",
+      "x": 0,
+      "z": 2.2,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Cabinet",
+      "rationale": "a full bathroom often features a nightstand as a cabinet to store toiletries and towels, providing ample storage",
+      "assetId": "side-table-drawers",
+      "assetName": "Side Table Drawers",
+      "modelUrl": "/assets/furniture/sideTableDrawers.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": 1.5,
+      "z": 0.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Sconce",
+      "rationale": "a full bathroom may include a lampTable to provide warm and cozy lighting, creating a relaxing atmosphere",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": -1.2,
+      "z": -1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Shelf",
+      "rationale": "a full bathroom often incorporates a shelfSmall to hold bathroom essentials, keeping them within easy reach",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    },
+    {
+      "assetKey": "mirrorLarge",
+      "x": 0,
+      "z": -2.3,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Mirror",
+      "rationale": "a full bathroom typically features a mirrorLarge for grooming and self-care, a essential element in any bathroom",
+      "assetId": "bookcase-closed",
+      "assetName": "Bookcase Closed",
+      "modelUrl": "/assets/furniture/bookcaseClosed.glb"
+    },
+    {
+      "assetKey": "plantSmall",
+      "x": 2.2,
+      "z": 1.2,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Plant",
+      "rationale": "a full bathroom may include a plantSmall to bring in a touch of nature and serenity, enhancing the overall ambiance",
+      "assetId": "plant-potted",
+      "assetName": "Plant Potted",
+      "modelUrl": "/assets/furniture/pottedPlant.glb"
+    },
+    {
+      "assetKey": "rugSmall",
+      "x": -0.5,
+      "z": 0.8,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bathroom Mat",
+      "rationale": "a full bathroom often features a rugSmall as a bathroom mat, providing comfort and warmth underfoot",
+      "assetId": "rug-round",
+      "assetName": "Rug Round",
+      "modelUrl": "/assets/furniture/rugRound.glb"
+    }
+  ],
+  "timestamp": "2026-05-09T09:37:48.850Z"
+}

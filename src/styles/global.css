@@ -100,3 +100,8 @@ input.precision-input:focus {
   border-color: var(--accent-border) !important;
   outline: none;
 }
+
+/* Hide the WebXR "Enter XR" button created by @react-three/xr */
+body > button {
+  display: none !important;
+}

@@ -1,0 +1,68 @@
+{
+  "prompt": "office room",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Executive Desk\",\n    \"rationale\": \"An executive desk is central to an office room, providing a dedicated workspace.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": -0.8,\n    \"z\": 1.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"An ergonomic office chair is essential in an office room for comfort and productivity.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.8,\n    \"z\": 1.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Desk Lamp\",\n    \"rationale\": \"A desk lamp in an office room provides focused lighting for tasks and reduces eye strain.\"\n  },\n  {\n    \"assetKey\": \"shelfBookcase\",\n    \"x\": 2.5,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Bookshelf\",\n    \"rationale\": \"An office bookshelf in an office room keeps reference materials and documents within easy reach.\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": -2.5,\n    \"z\": 0,\n    \"rotationY\": 90,\n    \"scale\": 1,\n    \"label\": \"Visitor Chair\",\n    \"rationale\": \"A visitor chair in an office room provides a comfortable seating option for clients or colleagues.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Executive Desk\",\n    \"rationale\": \"An executive desk is central to an office room, providing a dedicated workspace.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": -0.8,\n    \"z\": 1.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"An ergonomic office chair is essential in an office room for comfort and productivity.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.8,\n    \"z\": 1.2,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Desk Lamp\",\n    \"rationale\": \"A desk lamp in an office room provides focused lighting for tasks and reduces eye strain.\"\n  },\n  {\n    \"assetKey\": \"shelfBookcase\",\n    \"x\": 2.5,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Office Bookshelf\",\n    \"rationale\": \"An office bookshelf in an office room keeps reference materials and documents within easy reach.\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": -2.5,\n    \"z\": 0,\n    \"rotationY\": 90,\n    \"scale\": 1,\n    \"label\": \"Visitor Chair\",\n    \"rationale\": \"A visitor chair in an office room provides a comfortable seating option for clients or colleagues.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDesk",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Executive Desk",
+      "rationale": "An executive desk is central to an office room, providing a dedicated workspace.",
+      "assetId": "desk",
+      "assetName": "Desk",
+      "modelUrl": "/assets/furniture/desk.glb"
+    },
+    {
+      "assetKey": "chairOffice",
+      "x": -0.8,
+      "z": 1.2,
+      "rotationY": 146,
+      "scale": 1,
+      "label": "Ergonomic Office Chair",
+      "rationale": "An ergonomic office chair is essential in an office room for comfort and productivity.",
+      "assetId": "chair-desk",
+      "assetName": "Chair Desk",
+      "modelUrl": "/assets/furniture/chairDesk.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": 0.8,
+      "z": 1.2,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Desk Lamp",
+      "rationale": "A desk lamp in an office room provides focused lighting for tasks and reduces eye strain.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "shelfBookcase",
+      "x": 2.5,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Office Bookshelf",
+      "rationale": "An office bookshelf in an office room keeps reference materials and documents within easy reach.",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    },
+    {
+      "assetKey": "chairArmchair",
+      "x": -2.5,
+      "z": 0,
+      "rotationY": 90,
+      "scale": 1,
+      "label": "Visitor Chair",
+      "rationale": "A visitor chair in an office room provides a comfortable seating option for clients or colleagues.",
+      "assetId": "chair-cushion",
+      "assetName": "Chair Cushion",
+      "modelUrl": "/assets/furniture/chairCushion.glb"
+    }
+  ],
+  "timestamp": "2026-05-09T10:30:58.512Z"
+}

@@ -1,0 +1,80 @@
+{
+  "prompt": "playroom",
+  "raw": "[\n  {\n    \"assetKey\": \"tableCoffee\",\n    \"x\": 0.5,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Play Table\",\n    \"rationale\": \"A play table is essential for a playroom to encourage creativity and socialization among kids.\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": 1.2,\n    \"z\": 1.2,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Reading Nook Chair\",\n    \"rationale\": \"A cozy reading nook chair in a playroom invites kids to sit and read, fostering a love for literature.\"\n  },\n  {\n    \"assetKey\": \"sofaSingle\",\n    \"x\": -1.5,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Playroom Sofa\",\n    \"rationale\": \"A single sofa in a playroom provides a comfortable spot for kids to relax and take breaks from playtime.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.8,\n    \"z\": 0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Desk Lamp\",\n    \"rationale\": \"A desk lamp in a playroom helps to create a warm and inviting atmosphere, perfect for arts and crafts activities.\"\n  },\n  {\n    \"assetKey\": \"rugLarge\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Play Area Rug\",\n    \"rationale\": \"A large area rug in a playroom defines the play space and adds a pop of color, making it more engaging and fun for kids.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": -2.2,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Toy Shelf\",\n    \"rationale\": \"A small shelf in a playroom is perfect for storing toys, books, and other play materials, keeping the room organized and clutter-free.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableCoffee\",\n    \"x\": 0.5,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Play Table\",\n    \"rationale\": \"A play table is essential for a playroom to encourage creativity and socialization among kids.\"\n  },\n  {\n    \"assetKey\": \"chairArmchair\",\n    \"x\": 1.2,\n    \"z\": 1.2,\n    \"rotationY\": 45,\n    \"scale\": 1,\n    \"label\": \"Reading Nook Chair\",\n    \"rationale\": \"A cozy reading nook chair in a playroom invites kids to sit and read, fostering a love for literature.\"\n  },\n  {\n    \"assetKey\": \"sofaSingle\",\n    \"x\": -1.5,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Playroom Sofa\",\n    \"rationale\": \"A single sofa in a playroom provides a comfortable spot for kids to relax and take breaks from playtime.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": 0.8,\n    \"z\": 0.8,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Desk Lamp\",\n    \"rationale\": \"A desk lamp in a playroom helps to create a warm and inviting atmosphere, perfect for arts and crafts activities.\"\n  },\n  {\n    \"assetKey\": \"rugLarge\",\n    \"x\": 0,\n    \"z\": 0,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Play Area Rug\",\n    \"rationale\": \"A large area rug in a playroom defines the play space and adds a pop of color, making it more engaging and fun for kids.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": -2.2,\n    \"z\": 0.5,\n    \"rotationY\": 0,\n    \"scale\": 1,\n    \"label\": \"Toy Shelf\",\n    \"rationale\": \"A small shelf in a playroom is perfect for storing toys, books, and other play materials, keeping the room organized and clutter-free.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableCoffee",
+      "x": 0.5,
+      "z": 0.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Play Table",
+      "rationale": "A play table is essential for a playroom to encourage creativity and socialization among kids.",
+      "assetId": "table-coffee",
+      "assetName": "Table Coffee",
+      "modelUrl": "/assets/furniture/tableCoffee.glb"
+    },
+    {
+      "assetKey": "chairArmchair",
+      "x": 1.2,
+      "z": 1.2,
+      "rotationY": -135,
+      "scale": 1,
+      "label": "Reading Nook Chair",
+      "rationale": "A cozy reading nook chair in a playroom invites kids to sit and read, fostering a love for literature.",
+      "assetId": "chair-cushion",
+      "assetName": "Chair Cushion",
+      "modelUrl": "/assets/furniture/chairCushion.glb"
+    },
+    {
+      "assetKey": "sofaSingle",
+      "x": -1.5,
+      "z": 0.5,
+      "rotationY": 90,
+      "scale": 1,
+      "label": "Playroom Sofa",
+      "rationale": "A single sofa in a playroom provides a comfortable spot for kids to relax and take breaks from playtime.",
+      "assetId": "sofa",
+      "assetName": "Sofa",
+      "modelUrl": "/assets/furniture/loungeSofa.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": 0.8,
+      "z": 0.8,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Desk Lamp",
+      "rationale": "A desk lamp in a playroom helps to create a warm and inviting atmosphere, perfect for arts and crafts activities.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "rugLarge",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Play Area Rug",
+      "rationale": "A large area rug in a playroom defines the play space and adds a pop of color, making it more engaging and fun for kids.",
+      "assetId": "rug-rectangular",
+      "assetName": "Rug Rectangular",
+      "modelUrl": "/assets/furniture/rugRectangle.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": -2.2,
+      "z": 0.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Toy Shelf",
+      "rationale": "A small shelf in a playroom is perfect for storing toys, books, and other play materials, keeping the room organized and clutter-free.",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    }
+  ],
+  "timestamp": "2026-05-09T09:39:03.014Z"
+}
