@@ -1,11 +1,15 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
+import { Bookmark, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { FurnitureAsset } from "../../state/types";
 import { setDragAssetId } from "../../state/dragAsset";
 
-export function FurnitureSilhouette({ primitive }: { primitive: FurnitureAsset["primitive"] }) {
+export function FurnitureSilhouette({
+  primitive,
+}: {
+  primitive: FurnitureAsset["primitive"];
+}) {
   const c = "var(--text-ghost)";
 
   if (primitive === "table") {
@@ -33,8 +37,24 @@ export function FurnitureSilhouette({ primitive }: { primitive: FurnitureAsset["
   if (primitive === "sofa") {
     return (
       <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <rect x="2" y="14" width="26" height="8" fill={c} opacity="0.4" rx="1" />
-        <rect x="2" y="11" width="26" height="3" fill={c} opacity="0.6" rx="0.5" />
+        <rect
+          x="2"
+          y="14"
+          width="26"
+          height="8"
+          fill={c}
+          opacity="0.4"
+          rx="1"
+        />
+        <rect
+          x="2"
+          y="11"
+          width="26"
+          height="3"
+          fill={c}
+          opacity="0.6"
+          rx="0.5"
+        />
         <rect x="2" y="14" width="3.5" height="8" fill={c} rx="0.5" />
         <rect x="24.5" y="14" width="3.5" height="8" fill={c} rx="0.5" />
       </svg>
@@ -63,8 +83,25 @@ export function FurnitureSilhouette({ primitive }: { primitive: FurnitureAsset["
   if (primitive === "cabinet") {
     return (
       <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <rect x="5" y="6" width="20" height="18" fill={c} opacity="0.15" rx="1" />
-        <rect x="5" y="6" width="20" height="18" stroke={c} strokeWidth="1" rx="1" fill="none" />
+        <rect
+          x="5"
+          y="6"
+          width="20"
+          height="18"
+          fill={c}
+          opacity="0.15"
+          rx="1"
+        />
+        <rect
+          x="5"
+          y="6"
+          width="20"
+          height="18"
+          stroke={c}
+          strokeWidth="1"
+          rx="1"
+          fill="none"
+        />
         <line x1="15" y1="6" x2="15" y2="24" stroke={c} strokeWidth="0.8" />
         <circle cx="13" cy="15" r="1" fill={c} />
         <circle cx="17" cy="15" r="1" fill={c} />
@@ -75,9 +112,34 @@ export function FurnitureSilhouette({ primitive }: { primitive: FurnitureAsset["
   return (
     <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
       <rect x="5" y="8" width="20" height="14" fill={c} opacity="0.15" rx="1" />
-      <rect x="5" y="8" width="20" height="14" stroke={c} strokeWidth="1" rx="1" fill="none" />
-      <line x1="5" y1="8" x2="15" y2="15" stroke={c} strokeWidth="0.5" opacity="0.5" />
-      <line x1="25" y1="8" x2="15" y2="15" stroke={c} strokeWidth="0.5" opacity="0.5" />
+      <rect
+        x="5"
+        y="8"
+        width="20"
+        height="14"
+        stroke={c}
+        strokeWidth="1"
+        rx="1"
+        fill="none"
+      />
+      <line
+        x1="5"
+        y1="8"
+        x2="15"
+        y2="15"
+        stroke={c}
+        strokeWidth="0.5"
+        opacity="0.5"
+      />
+      <line
+        x1="25"
+        y1="8"
+        x2="15"
+        y2="15"
+        stroke={c}
+        strokeWidth="0.5"
+        opacity="0.5"
+      />
     </svg>
   );
 }
@@ -86,23 +148,32 @@ type AssetCardProps = {
   asset: FurnitureAsset;
   selected: boolean;
   onSelect: () => void;
+  onDelete?: () => void;
   onSave?: () => void;
   saving?: boolean;
 };
 
-export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCardProps) {
+export function AssetCard({
+  asset,
+  selected,
+  onSelect,
+  onDelete,
+  onSave,
+  saving,
+}: AssetCardProps) {
   const [hovered, setHovered] = useState(false);
   const isReady = asset.status === "ready" || asset.status === "mock";
-  const isGenerating = asset.status === "generating" || asset.status === "queued";
+  const isGenerating =
+    asset.status === "generating" || asset.status === "queued";
   const isFailed = asset.status === "failed";
 
   const accentColor = isReady
     ? "var(--status-ready)"
     : isGenerating
-    ? "var(--status-generating)"
-    : isFailed
-    ? "var(--status-error)"
-    : "var(--text-ghost)";
+      ? "var(--status-generating)"
+      : isFailed
+        ? "var(--status-error)"
+        : "var(--text-ghost)";
 
   const progress = Math.max(0, Math.min(100, asset.progress ?? 0));
 
@@ -112,7 +183,9 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
       role="button"
       tabIndex={0}
       onClick={onSelect}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect();
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       draggable={isReady}
@@ -139,8 +212,8 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
         background: selected
           ? "var(--surface-active)"
           : hovered
-          ? "rgba(255,255,255,0.022)"
-          : "transparent",
+            ? "rgba(255,255,255,0.022)"
+            : "transparent",
         transition: "background 120ms ease",
         userSelect: "none",
         outline: "none",
@@ -156,7 +229,9 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
           width: 2,
           background: accentColor,
           opacity: isGenerating ? undefined : 0.65,
-          animation: isGenerating ? "pulse-opacity 2s ease-in-out infinite" : undefined,
+          animation: isGenerating
+            ? "pulse-opacity 2s ease-in-out infinite"
+            : undefined,
           transition: "background 300ms",
         }}
       />
@@ -223,7 +298,15 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
         </div>
 
         {/* Text */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
           {/* Name row */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span
@@ -241,18 +324,61 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
             >
               {asset.name}
             </span>
-            {/* Status dot */}
             <div
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: accentColor,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
                 flexShrink: 0,
-                opacity: 0.9,
-                animation: isGenerating ? "pulse-opacity 2s ease-in-out infinite" : undefined,
               }}
-            />
+            >
+              {/* Status dot */}
+              <div
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: accentColor,
+                  flexShrink: 0,
+                  opacity: 0.9,
+                  animation: isGenerating
+                    ? "pulse-opacity 2s ease-in-out infinite"
+                    : undefined,
+                }}
+              />
+
+              {onDelete && (
+                <button
+                  type="button"
+                  aria-label="Delete workspace asset"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 3,
+                    border: `1px solid ${hovered ? "var(--status-error-border)" : "var(--border-dim)"}`,
+                    background: hovered
+                      ? "var(--status-error-bg)"
+                      : "transparent",
+                    color: hovered
+                      ? "var(--status-error)"
+                      : "var(--text-secondary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all 120ms",
+                    opacity: hovered ? 1 : 0,
+                  }}
+                >
+                  <Trash2 size={10} strokeWidth={1.5} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Prompt */}
@@ -273,7 +399,14 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
 
           {/* Ready row */}
           {isReady && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 1 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 1,
+              }}
+            >
               <span
                 style={{
                   fontSize: 9,
@@ -285,7 +418,13 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
                 }}
               >
                 {/* KENNEY-ALT: Show matched furniture from local asset library */}
-                {asset._meta?.matchedName ? `📦 ${asset._meta.matchedName}` : asset.modelUrl === "/placeholder-furniture.glb" ? "📦 placeholder shape" : asset.modelUrl ? "glb ready" : "pending"}
+                {asset._meta?.matchedName
+                  ? `📦 ${asset._meta.matchedName}`
+                  : asset.modelUrl === "/placeholder-furniture.glb"
+                    ? "📦 placeholder shape"
+                    : asset.modelUrl
+                      ? "glb ready"
+                      : "pending"}
                 {asset._meta?.confidence === "low" && " (approx)"}
               </span>
 
@@ -293,7 +432,10 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
                 <button
                   type="button"
                   aria-label="Save to library"
-                  onClick={(e) => { e.stopPropagation(); onSave(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSave();
+                  }}
                   disabled={saving}
                   style={{
                     display: "flex",
@@ -303,14 +445,19 @@ export function AssetCard({ asset, selected, onSelect, onSave, saving }: AssetCa
                     height: 18,
                     borderRadius: 2,
                     border: "1px solid var(--border-dim)",
-                    background: hovered ? "var(--surface-input)" : "transparent",
-                    color: saving ? "var(--text-ghost)" : "var(--text-secondary)",
+                    background: hovered
+                      ? "var(--surface-input)"
+                      : "transparent",
+                    color: saving
+                      ? "var(--text-ghost)"
+                      : "var(--text-secondary)",
                     fontSize: 9,
                     fontFamily: "var(--font-mono)",
                     cursor: saving ? "default" : "pointer",
                     letterSpacing: "0.06em",
                     textTransform: "uppercase",
-                    transition: "color 120ms, background 120ms, border-color 120ms",
+                    transition:
+                      "color 120ms, background 120ms, border-color 120ms",
                     opacity: hovered ? 1 : 0.6,
                   }}
                 >

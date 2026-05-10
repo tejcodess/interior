@@ -7,7 +7,7 @@ const FALLBACK_SERPAPI_KEY =
   "d3b62911d5c425d41054d04b7148497451fa881e47dbb267da5a963ea4fb1667";
 const RESULT_LIMIT = 18;
 
-type SerpApiEbayResult = {
+type SerpApiAmazonResult = {
   title?: unknown;
   link?: unknown;
   price?: unknown;
@@ -37,16 +37,16 @@ export async function GET(request: Request) {
     const json = await getJson({
       api_key: apiKey,
       engine: "amazon",
-      amazon_domain: "amazon.com",
+      amazon_domain: "amazon.in",
       k: query,
     });
 
     const organicResults = [
       ...(Array.isArray(json.organic_results)
-        ? (json.organic_results as SerpApiEbayResult[])
+        ? (json.organic_results as SerpApiAmazonResult[])
         : []),
       ...(Array.isArray(json.products)
-        ? (json.products as SerpApiEbayResult[])
+        ? (json.products as SerpApiAmazonResult[])
         : []),
     ];
 
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
   }
 }
 
-function normalizeResult(result: SerpApiEbayResult) {
+function normalizeResult(result: SerpApiAmazonResult) {
   const title = stringValue(result.title);
   const link = stringValue(result.link);
   if (!title || !link) return null;
@@ -123,10 +123,6 @@ function listText(value: unknown): string[] | undefined {
   return items.length ? items : undefined;
 }
 
-function booleanValue(value: unknown): boolean | undefined {
-  return typeof value === "boolean" ? value : undefined;
-}
-
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
@@ -135,4 +131,8 @@ function numberValue(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value)
     ? value
     : undefined;
+}
+
+function booleanValue(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
 }

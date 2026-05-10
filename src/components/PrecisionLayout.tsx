@@ -71,6 +71,7 @@ type PrecisionLayoutProps = {
   libraryEntries: LibraryEntry[];
   savingAssetId: string | null;
   onSaveAsset: (asset: FurnitureAsset) => void;
+  onDeleteWorkspaceAsset: (id: string) => void;
   onDeleteLibraryEntry: (id: string) => void;
   upload: UploadStatus;
   stylePrompt: string;
@@ -121,6 +122,7 @@ export function PrecisionLayout({
   libraryEntries,
   savingAssetId,
   onSaveAsset,
+  onDeleteWorkspaceAsset,
   onDeleteLibraryEntry,
   upload,
   stylePrompt: _stylePrompt,
@@ -238,6 +240,7 @@ export function PrecisionLayout({
             savingAssetId={savingAssetId}
             onGenerate={onGenerateFurniture}
             onUploadModel={onUploadModel}
+            onDeleteAsset={onDeleteWorkspaceAsset}
             onSaveAsset={onSaveAsset}
             onDeleteLibraryEntry={onDeleteLibraryEntry}
             onClose={() => setPanelOpen(false)}

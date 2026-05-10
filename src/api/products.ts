@@ -1,39 +1,43 @@
-export type EbayProductResult = {
+export type AmazonProductResult = {
   id: string;
   title: string;
-  subtitle?: string;
   link: string;
   thumbnail?: string;
   price?: string;
-  condition?: string;
+  rating?: number;
+  reviews?: number;
+  badges?: string[];
+  tags?: string[];
+  prime?: boolean;
+  boughtLastMonth?: string;
+  delivery?: string[];
   shipping?: string;
-  location?: string;
-  buyingFormat?: string;
-  quantitySold?: string;
-  seller?: {
-    username?: string;
-    reviews?: number;
-    positiveFeedback?: number;
-  };
 };
 
-export type EbayProductSearchResponse = {
+export type AmazonProductSearchResponse = {
   query: string;
   totalResults?: number;
-  results: EbayProductResult[];
+  results: AmazonProductResult[];
 };
 
-export async function searchEbayProducts(query: string): Promise<EbayProductSearchResponse> {
-  const response = await fetch(`/api/products/ebay?q=${encodeURIComponent(query)}`);
+export async function searchAmazonProducts(
+  query: string,
+): Promise<AmazonProductSearchResponse> {
+  const response = await fetch(
+    `/api/products/amazon?q=${encodeURIComponent(query)}`,
+  );
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
     const message =
-      body && typeof body === "object" && "error" in body && typeof body.error === "string"
+      body &&
+      typeof body === "object" &&
+      "error" in body &&
+      typeof body.error === "string"
         ? body.error
-        : `eBay product search failed: ${response.status}`;
+        : `Amazon product search failed: ${response.status}`;
     throw new Error(message);
   }
 
-  return body as EbayProductSearchResponse;
+  return body as AmazonProductSearchResponse;
 }

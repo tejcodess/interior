@@ -521,6 +521,30 @@ export default function App({ entering = false }: { entering?: boolean }) {
     }));
   }
 
+  function handleDeleteWorkspaceAsset(id: string) {
+    furnitureStreamsRef.current.get(id)?.close();
+    furnitureStreamsRef.current.delete(id);
+
+    setState((current) => {
+      const selectedInstanceRemoved =
+        current.selected?.type === "furniture" &&
+        current.furnitureInstances.find(
+          (instance) => instance.id === current.selected?.id,
+        )?.assetId === id;
+
+      return {
+        ...current,
+        furnitureAssets: current.furnitureAssets.filter(
+          (asset) => asset.id !== id,
+        ),
+        furnitureInstances: current.furnitureInstances.filter(
+          (instance) => instance.assetId !== id,
+        ),
+        selected: selectedInstanceRemoved ? null : current.selected,
+      };
+    });
+  }
+
   // ── Vibe batch add ─────────────────────────────────────────────────────────
 
   function handlePushUndo(snapshot: FurnitureInstance[]) {
@@ -934,6 +958,7 @@ export default function App({ entering = false }: { entering?: boolean }) {
         libraryEntries={libraryEntries}
         savingAssetId={savingAssetId}
         onSaveAsset={handleSaveAsset}
+        onDeleteWorkspaceAsset={handleDeleteWorkspaceAsset}
         onDeleteLibraryEntry={handleDeleteLibraryEntry}
         upload={state.upload}
         stylePrompt={state.stylePrompt}

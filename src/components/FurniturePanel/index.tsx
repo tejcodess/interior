@@ -1,6 +1,13 @@
 "use client";
 
-import { BookMarked, Cpu, FileUp, Minus, Package, Sparkles } from "lucide-react";
+import {
+  BookMarked,
+  Cpu,
+  FileUp,
+  Minus,
+  Package,
+  Sparkles,
+} from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import type { FurnitureAsset, LibraryEntry } from "../../state/types";
 import { VibeLayoutInput, type VibeLayoutInputProps } from "../VibeLayoutInput";
@@ -14,6 +21,7 @@ type FurniturePanelProps = {
   savingAssetId: string | null;
   onGenerate: (prompt: string) => void;
   onUploadModel?: (file: File) => void;
+  onDeleteAsset: (id: string) => void;
   onSaveAsset: (asset: FurnitureAsset) => void;
   onDeleteLibraryEntry: (id: string) => void;
   onClose: () => void;
@@ -28,6 +36,7 @@ export function FurniturePanel({
   savingAssetId,
   onGenerate,
   onUploadModel,
+  onDeleteAsset,
   onSaveAsset,
   onDeleteLibraryEntry,
   onClose,
@@ -65,7 +74,8 @@ export function FurniturePanel({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        transition: "width 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease",
+        transition:
+          "width 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms ease",
         zIndex: 15,
       }}
     >
@@ -130,7 +140,13 @@ export function FurniturePanel({
       <VibeLayoutInput {...vibeLayoutProps} />
 
       {/* ── Generate prompt ───────────────────────────────── */}
-      <div style={{ padding: "12px 12px 14px", flexShrink: 0, borderBottom: "1px solid var(--border-dim)" }}>
+      <div
+        style={{
+          padding: "12px 12px 14px",
+          flexShrink: 0,
+          borderBottom: "1px solid var(--border-dim)",
+        }}
+      >
         {/* Label row */}
         <div
           style={{
@@ -160,7 +176,9 @@ export function FurniturePanel({
           className="precision-input"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleAdd();
+          }}
           onFocus={() => setInputFocused(true)}
           onBlur={() => setInputFocused(false)}
           placeholder="round walnut coffee table"
@@ -196,14 +214,19 @@ export function FurniturePanel({
             width: "100%",
             height: 32,
             marginTop: 7,
-            background: canGenerate && btnHovered
-              ? "var(--surface-overlay)"
-              : canGenerate
-              ? "var(--surface-input)"
-              : "transparent",
+            background:
+              canGenerate && btnHovered
+                ? "var(--surface-overlay)"
+                : canGenerate
+                  ? "var(--surface-input)"
+                  : "transparent",
             border: `1px solid ${canGenerate ? (btnHovered ? "var(--border-mid)" : "var(--border-dim)") : "rgba(255,255,255,0.03)"}`,
             borderRadius: 4,
-            color: canGenerate ? (btnHovered ? "var(--text-bright)" : "var(--text-primary)") : "var(--text-ghost)",
+            color: canGenerate
+              ? btnHovered
+                ? "var(--text-bright)"
+                : "var(--text-primary)"
+              : "var(--text-ghost)",
             fontFamily: "var(--font-mono)",
             fontSize: 10,
             letterSpacing: "0.1em",
@@ -221,7 +244,8 @@ export function FurniturePanel({
             strokeWidth={1.5}
             style={{
               opacity: canGenerate ? 1 : 0.3,
-              color: canGenerate && btnHovered ? "var(--accent-text)" : "inherit",
+              color:
+                canGenerate && btnHovered ? "var(--accent-text)" : "inherit",
               transition: "color 140ms",
             }}
           />
@@ -243,10 +267,11 @@ export function FurniturePanel({
 
       {/* ── Scrollable lists ──────────────────────────────── */}
       <div className="precision-scroll" style={{ flex: 1, overflowY: "auto" }}>
-
         {/* Session section */}
         <ListSectionHeader
-          icon={<Sparkles size={10} strokeWidth={1.5} color="var(--accent-text)" />}
+          icon={
+            <Sparkles size={10} strokeWidth={1.5} color="var(--accent-text)" />
+          }
           label="Workspace"
           count={assets.length}
         />
@@ -258,7 +283,15 @@ export function FurniturePanel({
               key={asset.id}
               asset={asset}
               selected={selectedId === asset.id}
-              onSelect={() => setSelectedId(selectedId === asset.id ? null : asset.id)}
+              onSelect={() =>
+                setSelectedId(selectedId === asset.id ? null : asset.id)
+              }
+              onDelete={() => {
+                setSelectedId((current) =>
+                  current === asset.id ? null : current,
+                );
+                onDeleteAsset(asset.id);
+              }}
               onSave={() => onSaveAsset(asset)}
               saving={savingAssetId === asset.id}
             />
@@ -267,7 +300,14 @@ export function FurniturePanel({
 
         {/* Library section */}
         <ListSectionHeader
-          icon={<BookMarked size={10} strokeWidth={1.5} color="var(--status-generating)" style={{ opacity: 0.7 }} />}
+          icon={
+            <BookMarked
+              size={10}
+              strokeWidth={1.5}
+              color="var(--status-generating)"
+              style={{ opacity: 0.7 }}
+            />
+          }
           label="My Library"
           count={libraryEntries.length}
           topBorder
@@ -471,8 +511,8 @@ function LibraryEmptyState() {
         }}
       >
         No saved meshes.{" "}
-        <span style={{ color: "var(--text-primary)" }}>Save</span>
-        {" "}any ready asset to persist it.
+        <span style={{ color: "var(--text-primary)" }}>Save</span> any ready
+        asset to persist it.
       </span>
     </div>
   );

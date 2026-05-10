@@ -379,7 +379,7 @@ export class WalkthroughController {
    */
   private setupEventListeners(): void {
     const onKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
+      const key = typeof event.key === "string" ? event.key.toLowerCase() : "";
 
       switch (key) {
         case "w":
@@ -406,7 +406,7 @@ export class WalkthroughController {
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
+      const key = typeof event.key === "string" ? event.key.toLowerCase() : "";
 
       switch (key) {
         case "w":

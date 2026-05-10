@@ -1,0 +1,56 @@
+{
+  "prompt": "bedroom",
+  "raw": "[\n  {\"assetKey\": \"bedDouble\", \"x\": 0, \"z\": -1.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Double Bed\", \"rationale\": \"A bedroom typically centers around a bed, with a double bed being a common choice for a bedroom\"},\n  {\"assetKey\": \"nightstand\", \"x\": -0.8, \"z\": -1.8, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bedside Table\", \"rationale\": \"A nightstand is a typical complement to a bed in a bedroom, providing a convenient surface for bedtime essentials\"},\n  {\"assetKey\": \"dresser\", \"x\": 1.2, \"z\": -2.2, \"rotationY\": 0, \"scale\": 1, \"label\": \"Chest of Drawers\", \"rationale\": \"A dresser is a common piece of furniture in a bedroom, used for storing clothing and personal items\"},\n  {\"assetKey\": \"lampTable\", \"x\": -0.8, \"z\": -1.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bedside Lamp\", \"rationale\": \"A table lamp is often used in a bedroom to provide soft, warm lighting for reading or relaxation\"}\n]",
+  "cleaned": "[\n  {\"assetKey\": \"bedDouble\", \"x\": 0, \"z\": -1.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Double Bed\", \"rationale\": \"A bedroom typically centers around a bed, with a double bed being a common choice for a bedroom\"},\n  {\"assetKey\": \"nightstand\", \"x\": -0.8, \"z\": -1.8, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bedside Table\", \"rationale\": \"A nightstand is a typical complement to a bed in a bedroom, providing a convenient surface for bedtime essentials\"},\n  {\"assetKey\": \"dresser\", \"x\": 1.2, \"z\": -2.2, \"rotationY\": 0, \"scale\": 1, \"label\": \"Chest of Drawers\", \"rationale\": \"A dresser is a common piece of furniture in a bedroom, used for storing clothing and personal items\"},\n  {\"assetKey\": \"lampTable\", \"x\": -0.8, \"z\": -1.5, \"rotationY\": 0, \"scale\": 1, \"label\": \"Bedside Lamp\", \"rationale\": \"A table lamp is often used in a bedroom to provide soft, warm lighting for reading or relaxation\"}\n]",
+  "items": [
+    {
+      "assetKey": "bedDouble",
+      "x": 0,
+      "z": -1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Double Bed",
+      "rationale": "A bedroom typically centers around a bed, with a double bed being a common choice for a bedroom",
+      "assetId": "bed-double",
+      "assetName": "Bed Double",
+      "modelUrl": "/assets/furniture/bedDouble.glb"
+    },
+    {
+      "assetKey": "nightstand",
+      "x": -0.8,
+      "z": -1.8,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bedside Table",
+      "rationale": "A nightstand is a typical complement to a bed in a bedroom, providing a convenient surface for bedtime essentials",
+      "assetId": "side-table-drawers",
+      "assetName": "Side Table Drawers",
+      "modelUrl": "/assets/furniture/sideTableDrawers.glb"
+    },
+    {
+      "assetKey": "dresser",
+      "x": 1.2,
+      "z": -2.2,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Chest of Drawers",
+      "rationale": "A dresser is a common piece of furniture in a bedroom, used for storing clothing and personal items",
+      "assetId": "side-table-drawers",
+      "assetName": "Side Table Drawers",
+      "modelUrl": "/assets/furniture/sideTableDrawers.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": -0.8,
+      "z": -1.5,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Bedside Lamp",
+      "rationale": "A table lamp is often used in a bedroom to provide soft, warm lighting for reading or relaxation",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    }
+  ],
+  "timestamp": "2026-05-10T05:17:58.247Z"
+}

@@ -1,0 +1,68 @@
+{
+  "prompt": "minimalist home office",
+  "raw": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0.0,\n    \"z\": 0.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"White Desk\",\n    \"rationale\": \"A minimalist home office requires a clean and simple workspace, which is perfectly provided by a white desk as the central focal point.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.8,\n    \"rotationY\": 180.0,\n    \"scale\": 1.0,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"A minimalist home office benefits from an ergonomic office chair that provides comfort and support without visual clutter, facing the desk for productivity.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -1.2,\n    \"z\": 0.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"Simple Table Lamp\",\n    \"rationale\": \"A minimalist home office is enhanced by a simple table lamp that provides focused lighting without distracting from the workspace.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.8,\n    \"z\": 1.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"Compact Bookshelf\",\n    \"rationale\": \"A minimalist home office can include a compact bookshelf to store essential books and documents, maintaining the space's simplicity and functionality.\"\n  },\n  {\n    \"assetKey\": \"plantSmall\",\n    \"x\": -1.8,\n    \"z\": 1.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"Small Potted Plant\",\n    \"rationale\": \"A minimalist home office benefits from the addition of a small potted plant, which brings in a touch of nature without cluttering the space.\"\n  }\n]",
+  "cleaned": "[\n  {\n    \"assetKey\": \"tableDesk\",\n    \"x\": 0.0,\n    \"z\": 0.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"White Desk\",\n    \"rationale\": \"A minimalist home office requires a clean and simple workspace, which is perfectly provided by a white desk as the central focal point.\"\n  },\n  {\n    \"assetKey\": \"chairOffice\",\n    \"x\": 0.8,\n    \"z\": -0.8,\n    \"rotationY\": 180.0,\n    \"scale\": 1.0,\n    \"label\": \"Ergonomic Office Chair\",\n    \"rationale\": \"A minimalist home office benefits from an ergonomic office chair that provides comfort and support without visual clutter, facing the desk for productivity.\"\n  },\n  {\n    \"assetKey\": \"lampTable\",\n    \"x\": -1.2,\n    \"z\": 0.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"Simple Table Lamp\",\n    \"rationale\": \"A minimalist home office is enhanced by a simple table lamp that provides focused lighting without distracting from the workspace.\"\n  },\n  {\n    \"assetKey\": \"shelfSmall\",\n    \"x\": 1.8,\n    \"z\": 1.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"Compact Bookshelf\",\n    \"rationale\": \"A minimalist home office can include a compact bookshelf to store essential books and documents, maintaining the space's simplicity and functionality.\"\n  },\n  {\n    \"assetKey\": \"plantSmall\",\n    \"x\": -1.8,\n    \"z\": 1.0,\n    \"rotationY\": 0.0,\n    \"scale\": 1.0,\n    \"label\": \"Small Potted Plant\",\n    \"rationale\": \"A minimalist home office benefits from the addition of a small potted plant, which brings in a touch of nature without cluttering the space.\"\n  }\n]",
+  "items": [
+    {
+      "assetKey": "tableDesk",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "White Desk",
+      "rationale": "A minimalist home office requires a clean and simple workspace, which is perfectly provided by a white desk as the central focal point.",
+      "assetId": "desk",
+      "assetName": "Desk",
+      "modelUrl": "/assets/furniture/desk.glb"
+    },
+    {
+      "assetKey": "chairOffice",
+      "x": 0.8,
+      "z": -0.8,
+      "rotationY": -45,
+      "scale": 1,
+      "label": "Ergonomic Office Chair",
+      "rationale": "A minimalist home office benefits from an ergonomic office chair that provides comfort and support without visual clutter, facing the desk for productivity.",
+      "assetId": "chair-desk",
+      "assetName": "Chair Desk",
+      "modelUrl": "/assets/furniture/chairDesk.glb"
+    },
+    {
+      "assetKey": "lampTable",
+      "x": -1.2,
+      "z": 0,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Simple Table Lamp",
+      "rationale": "A minimalist home office is enhanced by a simple table lamp that provides focused lighting without distracting from the workspace.",
+      "assetId": "lamp-table",
+      "assetName": "Lamp Table",
+      "modelUrl": "/assets/furniture/lampSquareTable.glb"
+    },
+    {
+      "assetKey": "shelfSmall",
+      "x": 1.8,
+      "z": 1,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Compact Bookshelf",
+      "rationale": "A minimalist home office can include a compact bookshelf to store essential books and documents, maintaining the space's simplicity and functionality.",
+      "assetId": "bookcase-open",
+      "assetName": "Bookcase Open",
+      "modelUrl": "/assets/furniture/bookcaseOpen.glb"
+    },
+    {
+      "assetKey": "plantSmall",
+      "x": -1.8,
+      "z": 1,
+      "rotationY": 0,
+      "scale": 1,
+      "label": "Small Potted Plant",
+      "rationale": "A minimalist home office benefits from the addition of a small potted plant, which brings in a touch of nature without cluttering the space.",
+      "assetId": "plant-potted",
+      "assetName": "Plant Potted",
+      "modelUrl": "/assets/furniture/pottedPlant.glb"
+    }
+  ],
+  "timestamp": "2026-05-10T05:19:16.462Z"
+}
